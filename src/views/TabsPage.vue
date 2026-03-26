@@ -4,12 +4,12 @@
       <ion-router-outlet />
 
       <ion-tab-bar slot="bottom" class="custom-tab-bar">
-        <ion-tab-button tab="tab1" href="/tabs/tab1">
+        <ion-tab-button tab="incio" href="/inicio">
           <ion-icon :icon="homeOutline" />
           <ion-label>Inicio</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab2" href="/tabs/tab2">
+        <ion-tab-button tab="movimientos" href="/movimientos">
           <ion-icon :icon="swapHorizontalOutline" />
           <ion-label>Movimientos</ion-label>
         </ion-tab-button>

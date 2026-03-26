@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  'https://findmind-api-g9ete3bdaxe4e6bc.spaincentral-01.azurewebsites.net'
+  'http://10.0.2.2:5047'
 
 export interface CuentaBancariaResponse {
   id: string

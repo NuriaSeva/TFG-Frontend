@@ -2,8 +2,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'io.ionic.starter',
-  appName: 'FindMind',
-  webDir: 'dist'
+  appName: 'FinMind',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'http'
+  }
 };
 
 export default config;

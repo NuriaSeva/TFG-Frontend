@@ -45,7 +45,7 @@ CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
 
   if (!url) return
 
-  if (url.startsWith('findmind://callback')) {
+  if (url.startsWith('finmind://callback')) {
     const parsedUrl = new URL(url)
     const status = parsedUrl.searchParams.get('status')
 
