@@ -78,26 +78,53 @@
                   {{ categoria.nombre }}
                 </ion-select-option>
               </ion-select>
+              <button
+              class="new-category-button"
+              type="button"
+              @click="abrirNuevaCategoria"
+            >
+              + Nueva categoría
+            </button>
             </div>
 
             <div v-if="error" class="error-box">
               {{ error }}
             </div>
 
-            <ion-button
-              expand="block"
-              class="save-button"
-              @click="guardar"
-              :disabled="loading"
-            >
-              <ion-spinner v-if="loading" name="crescent" />
-              <span v-else>{{ esEdicion ? 'Guardar cambios' : 'Guardar movimiento' }}</span>
-            </ion-button>
+            <div class="actions-block">
+              <ion-button
+                expand="block"
+                class="save-button"
+                @click="guardar"
+                :disabled="loading"
+              >
+                <ion-spinner v-if="loading" name="crescent" />
+                <span v-else>{{ esEdicion ? 'Guardar cambios' : 'Guardar movimiento' }}</span>
+              </ion-button>
+
+              <ion-button
+                v-if="esEdicion"
+                expand="block"
+                fill="outline"
+                class="delete-button"
+                @click="eliminar"
+                :disabled="loading"
+              >
+                Eliminar movimiento
+              </ion-button>
+            </div>
           </div>
         </div>
       </ion-content>
     </ion-page>
   </ion-modal>
+  <CategoriaModal
+  :is-open="mostrandoModalCategoria"
+  :usuario-id="props.usuarioId"
+  :tipo-inicial="tipo"
+  @close="cerrarNuevaCategoria"
+  @guardada="onCategoriaGuardada"
+/>
 </template>
 
 <script setup lang="ts">
@@ -113,16 +140,18 @@ import {
   IonInput,
   IonSelect,
   IonSelectOption,
-  IonSpinner
+  IonSpinner,
+  alertController
 } from '@ionic/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { getCategorias, type Categoria } from '@/services/categoriaService'
 import {
   crearMovimientoManual,
   actualizarMovimiento,
+  eliminarMovimiento,
   type TransaccionListadoResponse
 } from '@/services/transaccionService'
-
+import CategoriaModal from '@/components/CategoriaModal.vue'
 const props = defineProps<{
   isOpen: boolean
   usuarioId: string
@@ -143,11 +172,30 @@ const esEdicion = computed(() => !!props.movimiento)
 const categorias = ref<Categoria[]>([])
 const loading = ref(false)
 const error = ref('')
+const inicializandoFormulario = ref(false)
 
 const categoriasFiltradas = computed(() => {
   return categorias.value.filter(c => Number(c.tipo) === tipo.value)
 })
+const mostrandoModalCategoria = ref(false)
 
+const abrirNuevaCategoria = () => {
+  mostrandoModalCategoria.value = true
+}
+
+const cerrarNuevaCategoria = () => {
+  mostrandoModalCategoria.value = false
+}
+
+const onCategoriaGuardada = async (categoria?: Categoria) => {
+  await cargarCategorias()
+
+  if (categoria?.id) {
+    categoriaId.value = categoria.id
+  }
+
+  mostrandoModalCategoria.value = false
+}
 const cargarCategorias = async () => {
   try {
     error.value = ''
@@ -166,9 +214,12 @@ const resetFormulario = () => {
   error.value = ''
 }
 
-const cargarFormularioDesdeMovimiento = () => {
+const cargarFormularioDesdeMovimiento = async () => {
+  inicializandoFormulario.value = true
+
   if (!props.movimiento) {
     resetFormulario()
+    inicializandoFormulario.value = false
     return
   }
 
@@ -176,8 +227,13 @@ const cargarFormularioDesdeMovimiento = () => {
   importe.value = String(props.movimiento.importe ?? '')
   descripcion.value = props.movimiento.descripcion ?? ''
   fecha.value = new Date(props.movimiento.fecha).toISOString().split('T')[0]
-  categoriaId.value = props.movimiento.categoriaId ?? null
   error.value = ''
+
+  await nextTick()
+
+  categoriaId.value = props.movimiento.categoriaId ?? null
+
+  inicializandoFormulario.value = false
 }
 
 const cerrar = () => {
@@ -202,9 +258,16 @@ const guardar = async () => {
     error.value = ''
 
     if (esEdicion.value && props.movimiento) {
+      const usuarioIdEdicion = props.movimiento.usuarioId ?? props.usuarioId
+
+      if (!usuarioIdEdicion) {
+        error.value = 'No se ha podido identificar el usuario del movimiento.'
+        return
+      }
+
       await actualizarMovimiento({
         id: props.movimiento.id,
-        usuarioId: props.usuarioId,
+        usuarioId: usuarioIdEdicion,
         cuentaBancariaId: props.movimiento.cuentaBancariaId ?? null,
         categoriaId: categoriaId.value,
         importe: importeNumero,
@@ -239,17 +302,62 @@ const guardar = async () => {
   }
 }
 
+const eliminar = async () => {
+  if (!props.movimiento?.id) {
+    error.value = 'No se ha encontrado el movimiento a eliminar.'
+    return
+  }
+
+  const alerta = await alertController.create({
+    header: 'Eliminar movimiento',
+    message: '¿Quieres eliminar este movimiento manual?',
+    buttons: [
+      {
+        text: 'Cancelar',
+        role: 'cancel'
+      },
+      {
+        text: 'Eliminar',
+        role: 'destructive'
+      }
+    ]
+  })
+
+  await alerta.present()
+  const { role } = await alerta.onDidDismiss()
+
+  if (role !== 'destructive') {
+    return
+  }
+
+  try {
+    loading.value = true
+    error.value = ''
+
+    await eliminarMovimiento(props.movimiento.id)
+
+    resetFormulario()
+    emit('guardado')
+    emit('close')
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'No se pudo eliminar el movimiento.'
+  } finally {
+    loading.value = false
+  }
+}
+
 watch(
   () => props.isOpen,
   async (abierto) => {
     if (abierto) {
       await cargarCategorias()
-      cargarFormularioDesdeMovimiento()
+      await cargarFormularioDesdeMovimiento()
     }
   }
 )
 
 watch(tipo, () => {
+  if (inicializandoFormulario.value) return
   categoriaId.value = null
 })
 </script>
@@ -332,6 +440,12 @@ watch(tipo, () => {
   font-weight: 600;
 }
 
+.actions-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .save-button {
   --background: #233f6b;
   --background-hover: #233f6b;
@@ -342,4 +456,13 @@ watch(tipo, () => {
   font-weight: 800;
   margin-top: 4px;
 }
+
+.delete-button {
+  --border-color: #c43d2f;
+  --color: #c43d2f;
+  --border-radius: 18px;
+  min-height: 50px;
+  font-weight: 800;
+}
+
 </style>

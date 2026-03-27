@@ -13,6 +13,8 @@ export interface TransaccionListadoResponse {
   fecha: string
   descripcion: string | null
   idTransaccionExterna: string | null
+  usuarioId?: string
+  categoriaNombre?: string | null
 }
 
 export interface PaginacionResponse<T> {
@@ -123,5 +125,18 @@ export const actualizarMovimiento = async (payload: ActualizarMovimientoRequest)
     throw new Error(`No se pudo actualizar el movimiento. ${errorText}`)
   }
 
-  return await response.json()
+  
+}
+export const eliminarMovimiento = async (id: string) => {
+  const response = await fetch(`${API_BASE_URL}/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json'
+    }
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`No se pudo eliminar el movimiento. ${errorText}`)
+  }
 }

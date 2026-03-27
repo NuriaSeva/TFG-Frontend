@@ -14,7 +14,7 @@
           <ion-label>Movimientos</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab3" href="/tabs/tab3">
+        <ion-tab-button tab="ajustes" href="/ajustes">
           <ion-icon :icon="settingsOutline" />
           <ion-label>Ajustes</ion-label>
         </ion-tab-button>

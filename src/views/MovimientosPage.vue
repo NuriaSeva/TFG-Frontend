@@ -20,11 +20,6 @@
       <div class="page-shell">
         <div class="movements-wrapper">
           <section class="filters-card">
-            <div class="filters-header">
-              <h2>Filtrar</h2>
-              <p>Consulta tus ingresos y gastos del periodo seleccionado.</p>
-            </div>
-
             <div class="filters-grid">
               <div class="filter-group">
                 <label class="filter-label">Mes</label>
@@ -136,8 +131,6 @@
                     v-for="transaccion in grupo.items"
                     :key="transaccion.id"
                     class="movement-item"
-                    :class="{ clickable: Number(transaccion.origen) === 1 }"
-                    @click="abrirEditarMovimiento(transaccion)"
                   >
                     <div class="movement-left">
                       <div
@@ -153,18 +146,30 @@
                         <h4>{{ transaccion.descripcion || 'Movimiento bancario' }}</h4>
                         <p class="movement-meta">
                           {{ formatearFechaCorta(transaccion.fecha) }}
-                          <span class="movement-tag">
-                            {{ transaccion.tipo === 1 ? 'Ingreso' : 'Gasto' }}
+                         <span class="movement-tag">
+                            {{ transaccion.categoriaNombre || 'Sin categoría' }}
                           </span>
                         </p>
                       </div>
                     </div>
 
-                    <div
-                      class="movement-amount"
-                      :class="transaccion.tipo === 1 ? 'income' : 'expense'"
-                    >
-                      {{ textoImporte(transaccion) }}
+                    <div class="movement-right">
+                      <div
+                        class="movement-amount"
+                        :class="transaccion.tipo === 1 ? 'income' : 'expense'"
+                      >
+                        {{ textoImporte(transaccion) }}
+                      </div>
+
+                      <button
+                        v-if="Number(transaccion.origen) === 1"
+                        class="edit-movement-button"
+                        type="button"
+                        @click.stop="abrirEditarMovimiento(transaccion)"
+                        aria-label="Editar movimiento"
+                      >
+                        Editar
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -270,7 +275,11 @@ const abrirEditarMovimiento = (transaccion: TransaccionListadoResponse) => {
     return
   }
 
-  movimientoSeleccionado.value = transaccion
+  movimientoSeleccionado.value = {
+    ...transaccion,
+    usuarioId
+  }
+
   mostrandoModalNuevo.value = true
 }
 
@@ -710,20 +719,29 @@ ion-select {
   border-bottom: none;
 }
 
-.movement-item.clickable {
-  cursor: pointer;
-}
-
-.movement-item.clickable:active {
-  opacity: 0.85;
-}
-
 .movement-left {
   display: flex;
   align-items: center;
   gap: 12px;
   flex: 1;
   min-width: 0;
+}
+
+.movement-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.edit-movement-button {
+  border: none;
+  background: transparent;
+  color: #233f6b;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0;
 }
 
 .movement-icon {
