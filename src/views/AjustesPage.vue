@@ -4,14 +4,8 @@
       <ion-toolbar class="custom-toolbar">
         <div class="topbar">
           <div>
-            <p class="topbar-kicker">FinMind</p>
             <h1 class="topbar-title">Ajustes</h1>
-            <p class="topbar-subtitle">Configura tu aplicación</p>
           </div>
-
-          <button class="profile-button" type="button" aria-label="Opciones">
-            <ion-icon :icon="settingsOutline" />
-          </button>
         </div>
       </ion-toolbar>
     </ion-header>

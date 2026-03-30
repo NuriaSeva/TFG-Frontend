@@ -9,7 +9,6 @@
             </button>
 
             <div>
-              <p class="topbar-kicker">FinMind</p>
               <h1 class="topbar-title">Categorías</h1>
             
             </div>

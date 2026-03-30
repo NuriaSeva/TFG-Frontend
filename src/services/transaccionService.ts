@@ -34,6 +34,14 @@ export interface ObtenerTransaccionesParams {
   pagina?: number
   tamanyo?: number
 }
+export interface ResultadoSincronizacionResponse {
+  totalRecibidas: number
+  nuevas: number
+  ignoradas: number
+  mensaje?: string
+}
+
+
 
 export const getTransaccionesPorUsuario = async ({
   usuarioId,
@@ -140,3 +148,23 @@ export const eliminarMovimiento = async (id: string) => {
     throw new Error(`No se pudo eliminar el movimiento. ${errorText}`)
   }
 }
+  
+  export const sincronizarMovimientosBancarios = async (
+    usuarioId: string
+  ): Promise<ResultadoSincronizacionResponse> => {
+    const response = await fetch(`${API_BASE_URL}/sincronizar/${encodeURIComponent(usuarioId)}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+  
+    if (!response.ok) {
+    const errorText = (await response.text()).trim()
+    throw new Error(errorText || 'No se pudo sincronizar la cuenta bancaria.')
+  }
+
+  return await response.json()
+}
+  
+

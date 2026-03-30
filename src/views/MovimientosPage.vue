@@ -4,14 +4,9 @@
       <ion-toolbar class="custom-toolbar">
         <div class="topbar">
           <div>
-            <p class="topbar-kicker">FinMind</p>
             <h1 class="topbar-title">Tus movimientos</h1>
             <p class="topbar-subtitle">{{ nombreMesActual }}</p>
           </div>
-
-          <button class="profile-button" type="button" aria-label="Opciones">
-            <ion-icon :icon="optionsOutline" />
-          </button>
         </div>
       </ion-toolbar>
     </ion-header>
