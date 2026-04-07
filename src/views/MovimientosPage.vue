@@ -196,13 +196,11 @@
       >
         <ion-icon :icon="addOutline" />
       </button>
-
       <NuevoMovimientoModal
-        :is-open="mostrandoModalNuevo"
-        :usuario-id="usuarioId"
-        :movimiento="movimientoSeleccionado"
-        @close="cerrarNuevoMovimiento"
-        @guardado="onMovimientoGuardado"
+        :abierto="mostrandoModalNuevo"
+        :movimiento-inicial="movimientoSeleccionado"
+        @cerrar="cerrarNuevoMovimiento"
+        @guardar="onMovimientoGuardado"
       />
     </ion-content>
   </ion-page>
@@ -237,7 +235,6 @@ import {
 } from '@/services/transaccionService'
 import NuevoMovimientoModal from '@/components/NuevoMovimientoModal.vue'
 
-const usuarioId = 'e7178a9b-d998-4efd-a029-f4e24977166a'
 
 const hoy = new Date()
 const mesActual = hoy.getMonth() + 1
@@ -271,8 +268,7 @@ const abrirEditarMovimiento = (transaccion: TransaccionListadoResponse) => {
   }
 
   movimientoSeleccionado.value = {
-    ...transaccion,
-    usuarioId
+    ...transaccion
   }
 
   mostrandoModalNuevo.value = true
@@ -379,7 +375,6 @@ const cargarTransacciones = async (reset = false) => {
     }
 
     const resultado = await getTransaccionesPorUsuario({
-      usuarioId,
       mes: filtroMes.value,
       anio: filtroAnio.value,
       tipo: filtroTipo.value,

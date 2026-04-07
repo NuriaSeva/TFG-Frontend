@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
+import { crearHeadersAutenticacion } from './httpService'
 
 const API_BASE_URL = 'http://10.0.2.2:5047/api/banking/tink'
 
@@ -9,16 +10,14 @@ export interface LoginUrlResponse {
   loginUrl: string
 }
 
-export const getLoginUrl = async (localUserId: string): Promise<LoginUrlResponse> => {
-  const url = `${API_BASE_URL}/login-url?localUserId=${encodeURIComponent(localUserId)}`
+export const getLoginUrl = async (): Promise<LoginUrlResponse> => {
+  const url = `${API_BASE_URL}/login-url`
   console.log('URL login-url:', url)
 
   try {
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json'
-      }
+      headers: crearHeadersAutenticacion()
     })
 
     console.log('response status:', response.status)
@@ -65,16 +64,13 @@ export const limpiarEventosTink = async () => {
 }
 
 export const getTransactionsLoginUrl = async (
-  localUserId: string
 ): Promise<LoginUrlResponse> => {
-  const url = `${API_BASE_URL}/transactions/login-url?localUserId=${encodeURIComponent(localUserId)}`
+  const url = `${API_BASE_URL}/transactions`
 
   try {
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json'
-      }
+      headers: crearHeadersAutenticacion()
     })
 
     if (!response.ok) {
@@ -90,12 +86,11 @@ export const getTransactionsLoginUrl = async (
     throw error
   }
 }
-export const desvincularCuentaBancaria = async (usuarioId: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/desvincular/${encodeURIComponent(usuarioId)}`, {
+
+export const desvincularCuentaBancaria = async (): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/desvincular`, {
     method: 'POST',
-    headers: {
-      Accept: 'application/json'
-    }
+    headers: crearHeadersAutenticacion()
   })
 
   if (!response.ok) {

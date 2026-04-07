@@ -1,5 +1,6 @@
-const API_BASE_URL =
-  'http://10.0.2.2:5047'
+import { crearHeadersAutenticacion } from './httpService'
+
+const API_BASE_URL = 'http://10.0.2.2:5047'
 
 export interface CuentaBancariaResponse {
   id: string
@@ -14,10 +15,13 @@ export interface CuentaBancariaResponse {
 }
 
 export const getCuentaPrincipalPorUsuario = async (
-  usuarioId: string
 ): Promise<CuentaBancariaResponse | null> => {
   const response = await fetch(
-    `${API_BASE_URL}/api/CuentasBancarias/usuario/${encodeURIComponent(usuarioId)}`
+    `${API_BASE_URL}/api/CuentasBancarias/usuario`,
+    {
+      method: 'GET',
+      headers: crearHeadersAutenticacion()
+    }
   )
 
   if (response.status === 404) {

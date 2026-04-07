@@ -1,3 +1,5 @@
+import { crearHeadersAutenticacion } from './httpService'
+
 const API_BASE_URL = 'http://10.0.2.2:5047/api/categorias'
 
 export interface Categoria {
@@ -13,7 +15,6 @@ export interface Categoria {
 }
 
 export interface CrearCategoriaRequest {
-  usuarioId: string
   nombre: string
   tipo: number
   color?: string | null
@@ -24,7 +25,6 @@ export interface CrearCategoriaRequest {
 
 export interface ActualizarCategoriaRequest {
   id: string
-  usuarioId?: string | null
   nombre: string
   tipo: number
   color?: string | null
@@ -33,16 +33,11 @@ export interface ActualizarCategoriaRequest {
   archivada: boolean
 }
 
-export const getCategorias = async (usuarioId: string): Promise<Categoria[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/obtener/${encodeURIComponent(usuarioId)}`,
-    {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json'
-      }
-    }
-  )
+export const getCategorias = async (): Promise<Categoria[]> => {
+  const response = await fetch(`${API_BASE_URL}/obtener`, {
+    method: 'GET',
+    headers: crearHeadersAutenticacion()
+  })
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -56,10 +51,7 @@ export const getCategorias = async (usuarioId: string): Promise<Categoria[]> => 
 export const crearCategoria = async (payload: CrearCategoriaRequest): Promise<Categoria> => {
   const response = await fetch(`${API_BASE_URL}/crear`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: crearHeadersAutenticacion(true),
     body: JSON.stringify(payload)
   })
 
@@ -74,10 +66,7 @@ export const crearCategoria = async (payload: CrearCategoriaRequest): Promise<Ca
 export const actualizarCategoria = async (payload: ActualizarCategoriaRequest) => {
   const response = await fetch(`${API_BASE_URL}/modificar/${payload.id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: crearHeadersAutenticacion(true),
     body: JSON.stringify(payload)
   })
 
@@ -98,13 +87,9 @@ export const cambiarArchivadoCategoria = async (
 ) => {
   const response = await fetch(`${API_BASE_URL}/modificar/${categoria.id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: crearHeadersAutenticacion(true),
     body: JSON.stringify({
       id: categoria.id,
-      usuarioId: categoria.usuarioId ?? null,
       nombre: categoria.nombre,
       tipo: categoria.tipo,
       color: categoria.color ?? null,

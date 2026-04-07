@@ -184,9 +184,6 @@ const resumenMes = ref<ResumenMes>({
 const route = useRoute()
 const router = useRouter()
 
-const usuarioId = 'e7178a9b-d998-4efd-a029-f4e24977166a'
-const localUserId = usuarioId
-
 const fechaCabeceraFormateada = computed(() => {
   return new Date()
     .toLocaleDateString('es-ES', {
@@ -248,7 +245,7 @@ const formatearImporte = (importe: number) => {
 
 const cargarCuentaConectada = async () => {
   try {
-    const cuenta = await getCuentaPrincipalPorUsuario(usuarioId)
+    const cuenta = await getCuentaPrincipalPorUsuario()
     cuentaGuardada.value = cuenta
   } catch (error) {
     console.error(error)
@@ -258,7 +255,7 @@ const cargarCuentaConectada = async () => {
 
 const cargarResumenMes = async () => {
   try {
-    const resumen = await getResumenMesActual(usuarioId)
+    const resumen = await getResumenMesActual()
     resumenMes.value = resumen
   } catch (error) {
     console.error(error)
@@ -348,7 +345,7 @@ const conectarBanco = async () => {
     loading.value = true
 
     await limpiarEventosTink()
-    const loginData = await getLoginUrl(localUserId)
+    const loginData = await getLoginUrl()
     await abrirTink(loginData.loginUrl)
   } catch (error) {
     console.error(error)
@@ -366,7 +363,7 @@ const conectarBancoTransacciones = async () => {
   try {
     loading.value = true
 
-    const loginData = await getTransactionsLoginUrl(localUserId)
+    const loginData = await getTransactionsLoginUrl()
     await abrirTink(loginData.loginUrl)
   } catch (error) {
     console.error(error)
@@ -420,7 +417,7 @@ const sincronizarMovimientos = async () => {
   try {
     sincronizando.value = true
 
-    const resultado = await sincronizarMovimientosBancarios(usuarioId)
+    const resultado = await sincronizarMovimientosBancarios()
     await recargarInicio()
 
     const mensaje =
@@ -453,7 +450,7 @@ const desvincularCuenta = async () => {
   try {
     desvinculando.value = true
 
-    await desvincularCuentaBancaria(usuarioId)
+    await desvincularCuentaBancaria();
     cuentaGuardada.value = null
     await mostrarToast('Cuenta desvinculada correctamente.', 'success')
   } catch (error) {

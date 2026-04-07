@@ -1,5 +1,6 @@
-const API_BASE_URL =
-  'http://10.0.2.2:5047/api/transacciones'
+import { crearHeadersAutenticacion } from './httpService'
+
+const API_BASE_URL = 'http://10.0.2.2:5047/api/transacciones'
 
 export interface TransaccionListadoResponse {
   id: string
@@ -26,7 +27,6 @@ export interface PaginacionResponse<T> {
 }
 
 export interface ObtenerTransaccionesParams {
-  usuarioId: string
   mes?: number | null
   anio?: number | null
   tipo?: number | null
@@ -34,6 +34,7 @@ export interface ObtenerTransaccionesParams {
   pagina?: number
   tamanyo?: number
 }
+
 export interface ResultadoSincronizacionResponse {
   totalRecibidas: number
   nuevas: number
@@ -41,10 +42,7 @@ export interface ResultadoSincronizacionResponse {
   mensaje?: string
 }
 
-
-
 export const getTransaccionesPorUsuario = async ({
-  usuarioId,
   mes,
   anio,
   tipo,
@@ -63,7 +61,11 @@ export const getTransaccionesPorUsuario = async ({
   queryParams.append('tamanyo', String(tamanyo))
 
   const response = await fetch(
-    `${API_BASE_URL}/obtener/${encodeURIComponent(usuarioId)}?${queryParams.toString()}`
+    `${API_BASE_URL}/obtener?${queryParams.toString()}`,
+    {
+      method: 'GET',
+      headers: crearHeadersAutenticacion()
+    }
   )
 
   if (!response.ok) {
@@ -75,7 +77,6 @@ export const getTransaccionesPorUsuario = async ({
 }
 
 export interface CrearMovimientoManualRequest {
-  usuarioId: string
   cuentaBancariaId?: string | null
   categoriaId?: string | null
   importe: number
@@ -87,7 +88,6 @@ export interface CrearMovimientoManualRequest {
 
 export interface ActualizarMovimientoRequest {
   id: string
-  usuarioId: string
   cuentaBancariaId?: string | null
   categoriaId?: string | null
   importe: number
@@ -103,10 +103,7 @@ export interface ActualizarMovimientoRequest {
 export const crearMovimientoManual = async (payload: CrearMovimientoManualRequest) => {
   const response = await fetch(`${API_BASE_URL}/crear`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: crearHeadersAutenticacion(true),
     body: JSON.stringify(payload)
   })
 
@@ -121,10 +118,7 @@ export const crearMovimientoManual = async (payload: CrearMovimientoManualReques
 export const actualizarMovimiento = async (payload: ActualizarMovimientoRequest) => {
   const response = await fetch(`${API_BASE_URL}/modificar/${payload.id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
+    headers: crearHeadersAutenticacion(true),
     body: JSON.stringify(payload)
   })
 
@@ -133,14 +127,16 @@ export const actualizarMovimiento = async (payload: ActualizarMovimientoRequest)
     throw new Error(`No se pudo actualizar el movimiento. ${errorText}`)
   }
 
-  
+  if (response.status === 204) return
+
+  const text = await response.text()
+  return text ? JSON.parse(text) : null
 }
+
 export const eliminarMovimiento = async (id: string) => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'DELETE',
-    headers: {
-      Accept: 'application/json'
-    }
+    headers: crearHeadersAutenticacion()
   })
 
   if (!response.ok) {
@@ -148,23 +144,18 @@ export const eliminarMovimiento = async (id: string) => {
     throw new Error(`No se pudo eliminar el movimiento. ${errorText}`)
   }
 }
-  
-  export const sincronizarMovimientosBancarios = async (
-    usuarioId: string
-  ): Promise<ResultadoSincronizacionResponse> => {
-    const response = await fetch(`${API_BASE_URL}/sincronizar/${encodeURIComponent(usuarioId)}`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json'
-      }
-    })
-  
-    if (!response.ok) {
+
+export const sincronizarMovimientosBancarios = async (
+): Promise<ResultadoSincronizacionResponse> => {
+  const response = await fetch(`${API_BASE_URL}`, {
+    method: 'POST',
+    headers: crearHeadersAutenticacion()
+  })
+
+  if (!response.ok) {
     const errorText = (await response.text()).trim()
     throw new Error(errorText || 'No se pudo sincronizar la cuenta bancaria.')
   }
 
   return await response.json()
 }
-  
-

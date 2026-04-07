@@ -1,183 +1,122 @@
-<template>
-  <ion-modal :is-open="isOpen" @didDismiss="cerrar">
-    <ion-page>
-      <ion-header class="ion-no-border">
-        <ion-toolbar class="modal-toolbar">
-          <ion-title>{{ esEdicion ? 'Editar movimiento' : 'Nuevo movimiento' }}</ion-title>
-          <ion-buttons slot="end">
-            <ion-button @click="cerrar">Cerrar</ion-button>
-          </ion-buttons>
-        </ion-toolbar>
-      </ion-header>
-
-      <ion-content class="modal-content">
-        <div class="form-shell">
-          <div class="form-card">
-            <div class="chips-row">
-              <button
-                class="type-chip"
-                :class="{ active: tipo === 1 }"
-                @click="tipo = 1"
-                type="button"
-              >
-                Ingreso
-              </button>
-
-              <button
-                class="type-chip"
-                :class="{ active: tipo === 2 }"
-                @click="tipo = 2"
-                type="button"
-              >
-                Gasto
-              </button>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Importe</label>
-              <ion-input
-                v-model="importe"
-                type="number"
-                inputmode="decimal"
-                placeholder="0,00"
-                class="custom-input"
-              />
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Descripción</label>
-              <ion-input
-                v-model="descripcion"
-                placeholder="Ej. Farmacia, nómina, supermercado..."
-                class="custom-input"
-              />
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Fecha</label>
-              <ion-input
-                v-model="fecha"
-                type="date"
-                class="custom-input"
-              />
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Categoría</label>
-              <ion-select
-                v-model="categoriaId"
-                interface="popover"
-                placeholder="Selecciona una categoría"
-                class="custom-select"
-              >
-                <ion-select-option
-                  v-for="categoria in categoriasFiltradas"
-                  :key="categoria.id"
-                  :value="categoria.id"
-                >
-                  {{ categoria.nombre }}
-                </ion-select-option>
-              </ion-select>
-              <button
-              class="new-category-button"
-              type="button"
-              @click="abrirNuevaCategoria"
-            >
-              + Nueva categoría
-            </button>
-            </div>
-
-            <div v-if="error" class="error-box">
-              {{ error }}
-            </div>
-
-            <div class="actions-block">
-              <ion-button
-                expand="block"
-                class="save-button"
-                @click="guardar"
-                :disabled="loading"
-              >
-                <ion-spinner v-if="loading" name="crescent" />
-                <span v-else>{{ esEdicion ? 'Guardar cambios' : 'Guardar movimiento' }}</span>
-              </ion-button>
-
-              <ion-button
-                v-if="esEdicion"
-                expand="block"
-                fill="outline"
-                class="delete-button"
-                @click="eliminar"
-                :disabled="loading"
-              >
-                Eliminar movimiento
-              </ion-button>
-            </div>
-          </div>
-        </div>
-      </ion-content>
-    </ion-page>
-  </ion-modal>
-  <CategoriaModal
-  :is-open="mostrandoModalCategoria"
-  :usuario-id="props.usuarioId"
-  :tipo-inicial="tipo"
-  @close="cerrarNuevaCategoria"
-  @guardada="onCategoriaGuardada"
-/>
-</template>
-
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import {
   IonModal,
-  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonButtons,
   IonButton,
   IonContent,
+  IonList,
+  IonItem,
   IonInput,
   IonSelect,
   IonSelectOption,
+  IonDatetime,
+  IonText,
+  IonIcon,
   IonSpinner,
-  alertController
+  toastController
 } from '@ionic/vue'
-import { computed, ref, watch, nextTick } from 'vue'
-import { getCategorias, type Categoria } from '@/services/categoriaService'
+import { addCircleOutline } from 'ionicons/icons'
+import CategoriaModal, { type CategoriaFormulario } from '@/components/CategoriaModal.vue'
 import {
-  crearMovimientoManual,
-  actualizarMovimiento,
-  eliminarMovimiento,
-  type TransaccionListadoResponse
-} from '@/services/transaccionService'
-import CategoriaModal from '@/components/CategoriaModal.vue'
+  getCategorias,
+  crearCategoria,
+  type Categoria
+} from '@/services/categoriaService'
+
+export interface MovimientoFormulario {
+  categoriaId?: string | null
+  importe: number | null
+  tipo: number
+  fecha: string
+  descripcion?: string | null
+  moneda?: string | null
+}
+
 const props = defineProps<{
-  isOpen: boolean
-  usuarioId: string
-  movimiento?: TransaccionListadoResponse | null
+  abierto: boolean
+  movimientoInicial?: MovimientoFormulario | null
 }>()
 
 const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'guardado'): void
+  (e: 'cerrar'): void
+  (e: 'guardar', value: MovimientoFormulario): void
 }>()
 
-const tipo = ref(2)
-const importe = ref('')
-const descripcion = ref('')
-const fecha = ref(new Date().toISOString().split('T')[0])
 const categoriaId = ref<string | null>(null)
-const esEdicion = computed(() => !!props.movimiento)
+const importe = ref<number | null>(null)
+const tipo = ref<number>(2)
+const fecha = ref<string>(new Date().toISOString())
+const descripcion = ref<string>('')
+const moneda = ref<string>('EUR')
+
 const categorias = ref<Categoria[]>([])
-const loading = ref(false)
-const error = ref('')
-const inicializandoFormulario = ref(false)
+const cargandoCategorias = ref(false)
+
+const mostrandoModalCategoria = ref(false)
+
+watch(
+  () => props.movimientoInicial,
+  value => {
+    categoriaId.value = value?.categoriaId ?? null
+    importe.value = value?.importe ?? null
+    tipo.value = value?.tipo ?? 2
+    fecha.value = value?.fecha ?? new Date().toISOString()
+    descripcion.value = value?.descripcion ?? ''
+    moneda.value = value?.moneda ?? 'EUR'
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.abierto,
+  async abierto => {
+    if (abierto) {
+      await cargarCategorias()
+    }
+  },
+  { immediate: true }
+)
 
 const categoriasFiltradas = computed(() => {
-  return categorias.value.filter(c => Number(c.tipo) === tipo.value)
+  return categorias.value.filter(c => !c.archivada && c.tipo === tipo.value)
 })
-const mostrandoModalCategoria = ref(false)
+
+const formularioValido = computed(() => {
+  return importe.value !== null && Number(importe.value) > 0 && fecha.value.trim() !== ''
+})
+
+const cargarCategorias = async () => {
+  cargandoCategorias.value = true
+
+  try {
+    categorias.value = await getCategorias()
+  } catch (error: any) {
+    await mostrarToast(error?.message || 'No se pudieron cargar las categorías.', 'danger')
+  } finally {
+    cargandoCategorias.value = false
+  }
+}
+
+const cerrar = () => {
+  emit('cerrar')
+}
+
+const guardar = () => {
+  if (!formularioValido.value) return
+
+  emit('guardar', {
+    categoriaId: categoriaId.value,
+    importe: importe.value,
+    tipo: tipo.value,
+    fecha: fecha.value,
+    descripcion: descripcion.value.trim() || null,
+    moneda: moneda.value.trim() || 'EUR'
+  })
+}
 
 const abrirNuevaCategoria = () => {
   mostrandoModalCategoria.value = true
@@ -187,282 +126,233 @@ const cerrarNuevaCategoria = () => {
   mostrandoModalCategoria.value = false
 }
 
-const onCategoriaGuardada = async (categoria?: Categoria) => {
-  await cargarCategorias()
-
-  if (categoria?.id) {
-    categoriaId.value = categoria.id
-  }
-
-  mostrandoModalCategoria.value = false
-}
-const cargarCategorias = async () => {
+const onCategoriaGuardada = async (formulario: CategoriaFormulario) => {
   try {
-    error.value = ''
-    categorias.value = await getCategorias(props.usuarioId)
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'No se pudieron cargar las categorías.'
+    const categoriaCreada = await crearCategoria(formulario)
+    await cargarCategorias()
+
+    categoriaId.value = categoriaCreada.id
+    mostrandoModalCategoria.value = false
+
+    await mostrarToast('Categoría creada correctamente.')
+  } catch (error: any) {
+    await mostrarToast(error?.message || 'No se pudo crear la categoría.', 'danger')
   }
 }
 
-const resetFormulario = () => {
-  tipo.value = 2
-  importe.value = ''
-  descripcion.value = ''
-  fecha.value = new Date().toISOString().split('T')[0]
-  categoriaId.value = null
-  error.value = ''
-}
-
-const cargarFormularioDesdeMovimiento = async () => {
-  inicializandoFormulario.value = true
-
-  if (!props.movimiento) {
-    resetFormulario()
-    inicializandoFormulario.value = false
-    return
-  }
-
-  tipo.value = Number(props.movimiento.tipo)
-  importe.value = String(props.movimiento.importe ?? '')
-  descripcion.value = props.movimiento.descripcion ?? ''
-  fecha.value = new Date(props.movimiento.fecha).toISOString().split('T')[0]
-  error.value = ''
-
-  await nextTick()
-
-  categoriaId.value = props.movimiento.categoriaId ?? null
-
-  inicializandoFormulario.value = false
-}
-
-const cerrar = () => {
-  emit('close')
-}
-
-const guardar = async () => {
-  const importeNumero = Number(String(importe.value).replace(',', '.'))
-
-  if (!importeNumero || importeNumero <= 0) {
-    error.value = 'Introduce un importe válido mayor que cero.'
-    return
-  }
-
-  if (!fecha.value) {
-    error.value = 'Selecciona una fecha.'
-    return
-  }
-
-  try {
-    loading.value = true
-    error.value = ''
-
-    if (esEdicion.value && props.movimiento) {
-      const usuarioIdEdicion = props.movimiento.usuarioId ?? props.usuarioId
-
-      if (!usuarioIdEdicion) {
-        error.value = 'No se ha podido identificar el usuario del movimiento.'
-        return
-      }
-
-      await actualizarMovimiento({
-        id: props.movimiento.id,
-        usuarioId: usuarioIdEdicion,
-        cuentaBancariaId: props.movimiento.cuentaBancariaId ?? null,
-        categoriaId: categoriaId.value,
-        importe: importeNumero,
-        moneda: props.movimiento.moneda ?? 'EUR',
-        tipo: tipo.value,
-        origen: props.movimiento.origen,
-        proveedor: props.movimiento.proveedor,
-        fecha: `${fecha.value}T00:00:00`,
-        descripcion: descripcion.value?.trim() || null,
-        idTransaccionExterna: props.movimiento.idTransaccionExterna ?? null
-      })
-    } else {
-      await crearMovimientoManual({
-        usuarioId: props.usuarioId,
-        cuentaBancariaId: null,
-        categoriaId: categoriaId.value,
-        importe: importeNumero,
-        tipo: tipo.value,
-        fecha: `${fecha.value}T00:00:00`,
-        descripcion: descripcion.value?.trim() || null,
-        moneda: 'EUR'
-      })
-    }
-
-    resetFormulario()
-    emit('guardado')
-    emit('close')
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'No se pudo guardar el movimiento.'
-  } finally {
-    loading.value = false
-  }
-}
-
-const eliminar = async () => {
-  if (!props.movimiento?.id) {
-    error.value = 'No se ha encontrado el movimiento a eliminar.'
-    return
-  }
-
-  const alerta = await alertController.create({
-    header: 'Eliminar movimiento',
-    message: '¿Quieres eliminar este movimiento manual?',
-    buttons: [
-      {
-        text: 'Cancelar',
-        role: 'cancel'
-      },
-      {
-        text: 'Eliminar',
-        role: 'destructive'
-      }
-    ]
+const mostrarToast = async (
+  message: string,
+  color: 'success' | 'danger' | 'warning' | 'primary' = 'success'
+) => {
+  const toast = await toastController.create({
+    message,
+    duration: 2200,
+    position: 'bottom',
+    color
   })
 
-  await alerta.present()
-  const { role } = await alerta.onDidDismiss()
-
-  if (role !== 'destructive') {
-    return
-  }
-
-  try {
-    loading.value = true
-    error.value = ''
-
-    await eliminarMovimiento(props.movimiento.id)
-
-    resetFormulario()
-    emit('guardado')
-    emit('close')
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'No se pudo eliminar el movimiento.'
-  } finally {
-    loading.value = false
-  }
+  await toast.present()
 }
-
-watch(
-  () => props.isOpen,
-  async (abierto) => {
-    if (abierto) {
-      await cargarCategorias()
-      await cargarFormularioDesdeMovimiento()
-    }
-  }
-)
-
-watch(tipo, () => {
-  if (inicializandoFormulario.value) return
-  categoriaId.value = null
-})
 </script>
 
+<template>
+  <ion-modal :is-open="abierto" @didDismiss="cerrar">
+    <ion-header class="modal-header">
+      <ion-toolbar>
+        <ion-title>Nuevo movimiento</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="cerrar">Cerrar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="modal-content">
+      <div class="contenedor-modal">
+        <ion-list lines="none" class="lista-formulario">
+          <ion-item class="item-formulario">
+            <ion-select
+              v-model="tipo"
+              label="Tipo"
+              label-placement="stacked"
+              interface="popover"
+            >
+              <ion-select-option :value="2">Gasto</ion-select-option>
+              <ion-select-option :value="1">Ingreso</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item class="item-formulario">
+            <ion-input
+              v-model.number="importe"
+              type="number"
+              label="Importe"
+              label-placement="stacked"
+              placeholder="0,00"
+            />
+          </ion-item>
+
+          <ion-item class="item-formulario">
+            <ion-input
+              v-model="descripcion"
+              type="text"
+              label="Descripción"
+              label-placement="stacked"
+              placeholder="Ej. Supermercado"
+            />
+          </ion-item>
+
+          <ion-item class="item-formulario">
+            <ion-input
+              v-model="moneda"
+              type="text"
+              label="Moneda"
+              label-placement="stacked"
+              placeholder="EUR"
+            />
+          </ion-item>
+
+          <ion-item class="item-formulario">
+            <ion-datetime
+              v-model="fecha"
+              presentation="date"
+              locale="es-ES"
+            />
+          </ion-item>
+
+          <ion-item class="item-formulario">
+            <ion-select
+              v-model="categoriaId"
+              label="Categoría"
+              label-placement="stacked"
+              interface="popover"
+              :disabled="cargandoCategorias"
+            >
+              <ion-select-option :value="null">Sin categoría</ion-select-option>
+
+              <ion-select-option
+                v-for="categoria in categoriasFiltradas"
+                :key="categoria.id"
+                :value="categoria.id"
+              >
+                {{ categoria.nombre }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <div class="acciones-categoria">
+            <ion-button
+              fill="clear"
+              class="boton-nueva-categoria"
+              @click="abrirNuevaCategoria"
+            >
+              <ion-icon slot="start" :icon="addCircleOutline" />
+              Nueva categoría
+            </ion-button>
+          </div>
+        </ion-list>
+
+        <div v-if="cargandoCategorias" class="estado-carga">
+          <ion-spinner name="crescent" />
+          <ion-text color="medium">Cargando categorías...</ion-text>
+        </div>
+
+        <ion-text v-if="!formularioValido" color="danger" class="texto-ayuda">
+          Debes indicar al menos un importe válido y una fecha.
+        </ion-text>
+
+        <div class="acciones">
+          <ion-button
+            expand="block"
+            class="boton-guardar"
+            :disabled="!formularioValido"
+            @click="guardar"
+          >
+            Guardar movimiento
+          </ion-button>
+        </div>
+      </div>
+
+      <CategoriaModal
+        :abierto="mostrandoModalCategoria"
+        modo="crear"
+        :categoria-inicial="{
+          nombre: '',
+          tipo: tipo,
+          color: null,
+          icono: null,
+          esSistema: false,
+          archivada: false
+        }"
+        @cerrar="cerrarNuevaCategoria"
+        @guardar="onCategoriaGuardada"
+      />
+    </ion-content>
+  </ion-modal>
+</template>
+
 <style scoped>
-.modal-toolbar {
+.modal-header ion-toolbar {
   --background: #233f6b;
   --color: #ffffff;
 }
 
 .modal-content {
-  --background: #f2f0ef;
+  --background: #f8f7f6;
 }
 
-.form-shell {
-  padding: 16px;
+.contenedor-modal {
+  padding: 18px 16px 28px;
 }
 
-.form-card {
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.lista-formulario {
+  background: transparent;
 }
 
-.chips-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.type-chip {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 16px;
-  background: #eef1f5;
-  color: #233f6b;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.type-chip.active {
-  background: #f1b80f;
-  color: #17181c;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field-label {
-  font-size: 0.92rem;
-  color: #6f7782;
-  font-weight: 700;
-}
-
-.custom-input,
-.custom-select {
-  --color: #17181c;
+.item-formulario {
+  --background: #ffffff;
+  --border-radius: 16px;
   --padding-start: 14px;
-  --padding-end: 14px;
-  --highlight-color-focused: transparent;
-  background: #f8f7f6;
+  --inner-padding-end: 14px;
+  margin-bottom: 14px;
   border-radius: 16px;
-  min-height: 52px;
-  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(35, 63, 107, 0.06);
 }
 
-.error-box {
-  background: rgba(196, 61, 47, 0.08);
-  color: #c43d2f;
-  border-radius: 14px;
-  padding: 12px;
-  font-size: 0.92rem;
+.acciones-categoria {
+  display: flex;
+  justify-content: flex-start;
+  margin: 6px 0 14px;
+}
+
+.boton-nueva-categoria {
+  --color: #233f6b;
   font-weight: 600;
 }
 
-.actions-block {
+.estado-carga {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  align-items: center;
+  padding: 8px 0 6px;
 }
 
-.save-button {
+.texto-ayuda {
+  display: block;
+  margin: 4px 4px 0;
+  font-size: 0.9rem;
+}
+
+.acciones {
+  margin-top: 18px;
+}
+
+.boton-guardar {
   --background: #233f6b;
   --background-hover: #233f6b;
   --background-activated: #233f6b;
-  --color: #ffffff;
-  --border-radius: 18px;
-  min-height: 52px;
-  font-weight: 800;
-  margin-top: 4px;
+  --border-radius: 16px;
+  min-height: 48px;
+  font-weight: 600;
 }
-
-.delete-button {
-  --border-color: #c43d2f;
-  --color: #c43d2f;
-  --border-radius: 18px;
-  min-height: 50px;
-  font-weight: 800;
-}
-
 </style>
