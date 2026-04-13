@@ -15,7 +15,5 @@ export const crearHeadersAutenticacion = (incluirContentType = false): HeadersIn
     headers.Authorization = `Bearer ${token}`
   }
 
-  console.log('HEADERS FINALES:', headers)
-
   return headers
 }

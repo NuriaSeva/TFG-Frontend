@@ -34,33 +34,89 @@
               <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
             </button>
           </section>
+
+          <section class="section-card section-card-danger">
+            <div class="section-header">
+              <h2>Sesión</h2>
+              <p>Gestiona el acceso a tu cuenta en este dispositivo.</p>
+            </div>
+
+            <button class="settings-item settings-item-danger" type="button" @click="onCerrarSesion">
+              <div class="settings-item-left">
+                <div class="settings-icon settings-icon-danger">
+                  <ion-icon :icon="logOutOutline" />
+                </div>
+
+                <div class="settings-text">
+                  <h3>Cerrar sesión</h3>
+                  <p>Salir de tu cuenta y volver a la pantalla de inicio de sesión.</p>
+                </div>
+              </div>
+
+              <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
+            </button>
+          </section>
         </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
-
 <script setup lang="ts">
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonContent,
-  IonIcon
+  IonIcon,
+  alertController,
+  toastController
 } from '@ionic/vue'
 import {
-  settingsOutline,
   pricetagsOutline,
-  chevronForwardOutline
+  chevronForwardOutline,
+  logOutOutline
 } from 'ionicons/icons'
 import { useRouter } from 'vue-router'
+import { cerrarSesion } from '@/services/autenticacionService'
 
 const router = useRouter()
 
-const irACategorias = () => {
- router.push('/ajustes/categorias')
+const irACategorias = async () => {
+  await router.push('/ajustes/categorias')
+}
+
+const onCerrarSesion = async () => {
+  const alert = await alertController.create({
+    header: 'Cerrar sesión',
+    message: '¿Quieres cerrar la sesión actual?',
+    buttons: [
+      {
+        text: 'Cancelar',
+        role: 'cancel'
+      },
+      {
+        text: 'Cerrar sesión',
+        role: 'destructive',
+        handler: async () => {
+          await cerrarSesion()
+
+          const toast = await toastController.create({
+            message: 'Sesión cerrada correctamente.',
+            duration: 1800,
+            position: 'bottom'
+          })
+
+          await toast.present()
+          await router.replace('/inicio-sesion')
+        }
+      }
+    ]
+  })
+
+  await alert.present()
 }
 </script>
+
 
 <style scoped>
 .custom-toolbar {
@@ -206,5 +262,17 @@ const irACategorias = () => {
   color: #233f6b;
   font-size: 1.1rem;
   flex-shrink: 0;
+}
+.section-card-danger {
+  margin-top: 18px;
+}
+
+.settings-item-danger {
+  border: 1px solid rgba(180, 35, 24, 0.12);
+}
+
+.settings-icon-danger {
+  background: rgba(180, 35, 24, 0.10);
+  color: #b42318;
 }
 </style>

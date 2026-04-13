@@ -100,7 +100,8 @@
 
           <section class="summary-grid">
             <article class="summary-card gastos">
-              <p class="summary-label">Gastos</p>
+              <div class="summary-accent"></div>
+              <p class="summary-label">Gastos del mes</p>
               <h3 class="summary-amount">{{ formatearImporte(resumenMes.gastosMes) }}</h3>
               <p class="summary-meta">
                 {{ resumenMes.numeroGastosMes }} movimiento<span v-if="resumenMes.numeroGastosMes !== 1">s</span> este mes
@@ -108,10 +109,34 @@
             </article>
 
             <article class="summary-card ingresos">
-              <p class="summary-label">Ingresos</p>
+              <div class="summary-accent"></div>
+              <p class="summary-label">Ingresos del mes</p>
               <h3 class="summary-amount">{{ formatearImporte(resumenMes.ingresosMes) }}</h3>
               <p class="summary-meta">
                 {{ resumenMes.numeroIngresosMes }} movimiento<span v-if="resumenMes.numeroIngresosMes !== 1">s</span> este mes
+              </p>
+            </article>
+
+            <article class="summary-card balance full-width">
+              <div class="summary-accent"></div>
+              <div class="balance-top">
+                <div>
+                  <p class="summary-label">Balance</p>
+                  <h3
+                    class="summary-amount"
+                    :class="balanceMes >= 0 ? 'balance-positivo' : 'balance-negativo'"
+                  >
+                    {{ formatearImporte(balanceMes) }}
+                  </h3>
+                </div>
+
+                <div class="balance-badge" :class="balanceMes >= 0 ? 'positivo' : 'negativo'">
+                  {{ balanceMes >= 0 ? 'Positivo' : 'Negativo' }}
+                </div>
+              </div>
+
+              <p class="summary-meta balance-meta">
+                {{ balanceMes >= 0 ? 'Tus ingresos superan a tus gastos este mes.' : 'Tus gastos superan a tus ingresos este mes.' }}
               </p>
             </article>
           </section>
@@ -221,6 +246,10 @@ const ibanOculto = computed(() => {
   return `${primeros} **** **** **** ${ultimos}`
 })
 
+const balanceMes = computed(() => {
+  return (resumenMes.value.ingresosMes || 0) - (resumenMes.value.gastosMes || 0)
+})
+
 const mostrarToast = async (
   mensaje: string,
   color: 'success' | 'danger' | 'warning' | 'primary' = 'primary'
@@ -248,7 +277,6 @@ const cargarCuentaConectada = async () => {
     const cuenta = await getCuentaPrincipalPorUsuario()
     cuentaGuardada.value = cuenta
   } catch (error) {
-    console.error(error)
     cuentaGuardada.value = null
   }
 }
@@ -258,7 +286,6 @@ const cargarResumenMes = async () => {
     const resumen = await getResumenMesActual()
     resumenMes.value = resumen
   } catch (error) {
-    console.error(error)
     resumenMes.value = {
       gastosMes: 0,
       ingresosMes: 0,
@@ -291,7 +318,6 @@ const procesarRetornoBanco = async () => {
       await recargarInicio()
       await mostrarToast('Cuenta conectada correctamente.', 'success')
     } catch (error) {
-      console.error(error)
       await mostrarToast(
         'La cuenta se conectó, pero no se pudo refrescar la información.',
         'warning'
@@ -307,7 +333,6 @@ const procesarRetornoBanco = async () => {
       await recargarInicio()
       await mostrarToast('Autorización de transacciones completada correctamente.', 'success')
     } catch (error) {
-      console.error(error)
       await mostrarToast(
         'La autorización terminó, pero no se pudo refrescar la información.',
         'warning'
@@ -348,7 +373,6 @@ const conectarBanco = async () => {
     const loginData = await getLoginUrl()
     await abrirTink(loginData.loginUrl)
   } catch (error) {
-    console.error(error)
     await mostrarToast(
       error instanceof Error
         ? error.message
@@ -366,7 +390,6 @@ const conectarBancoTransacciones = async () => {
     const loginData = await getTransactionsLoginUrl()
     await abrirTink(loginData.loginUrl)
   } catch (error) {
-    console.error(error)
     await mostrarToast(
       error instanceof Error
         ? error.message
@@ -428,8 +451,6 @@ const sincronizarMovimientos = async () => {
 
     await mostrarToast(mensaje, 'success')
   } catch (error) {
-    console.error(error)
-
     const mensaje =
       error instanceof Error
         ? error.message.trim()
@@ -450,11 +471,10 @@ const desvincularCuenta = async () => {
   try {
     desvinculando.value = true
 
-    await desvincularCuentaBancaria();
+    await desvincularCuentaBancaria()
     cuentaGuardada.value = null
     await mostrarToast('Cuenta desvinculada correctamente.', 'success')
   } catch (error) {
-    console.error(error)
     await mostrarToast(
       error instanceof Error
         ? error.message
@@ -590,7 +610,7 @@ watch(
 .account-card {
   background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
+  box-shadow: 0 10px 26px rgba(35, 63, 107, 0.08);
   padding: 18px;
 }
 
@@ -602,10 +622,10 @@ watch(
 
 .empty-bank-icon,
 .bank-summary-icon {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 14px;
-  background: #f2f0ef;
+  background: #edf2fa;
   color: #233f6b;
   display: flex;
   align-items: center;
@@ -638,6 +658,7 @@ watch(
   --border-radius: 18px;
   font-weight: 700;
   min-height: 52px;
+  box-shadow: 0 10px 18px rgba(241, 184, 15, 0.22);
 }
 
 .bank-card-header {
@@ -682,7 +703,7 @@ watch(
   margin: 0;
   color: #233f6b;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .bank-summary-iban {
@@ -741,39 +762,103 @@ watch(
 }
 
 .summary-card {
+  position: relative;
   background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
-  padding: 16px 14px;
+  border-radius: 22px;
+  box-shadow: 0 10px 26px rgba(35, 63, 107, 0.08);
+  padding: 18px 16px 16px;
+  overflow: hidden;
+}
+
+.summary-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.summary-accent {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 5px;
+  background: #233f6b;
+}
+
+.summary-card.ingresos .summary-accent {
+  background: #f1b80f;
+}
+
+.summary-card.gastos .summary-accent {
+  background: #233f6b;
+}
+
+.summary-card.balance .summary-accent {
+  background: linear-gradient(90deg, #067647 0%, #12b76a 100%);
 }
 
 .summary-label {
-  margin: 0 0 10px;
-  font-size: 0.95rem;
+  margin: 8px 0 10px;
+  font-size: 0.92rem;
   font-weight: 700;
-  color: #17181c;
+  color: #667085;
 }
 
 .summary-amount {
   margin: 0;
-  font-size: 1.85rem;
+  font-size: 1.8rem;
   font-weight: 800;
-  color: #17181c;
   line-height: 1.1;
+  color: #17181c;
 }
 
 .summary-meta {
   margin: 10px 0 0;
   font-size: 0.83rem;
   color: #7a8088;
+  line-height: 1.4;
 }
 
 .summary-card.gastos .summary-amount {
-  color: #17181c;
+  color: #233f6b;
 }
 
 .summary-card.ingresos .summary-amount {
-  color: #17181c;
+  color: #8a6500;
+}
+
+.balance-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.balance-badge {
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.balance-badge.positivo {
+  background: rgba(6, 118, 71, 0.12);
+  color: #067647;
+}
+
+.balance-badge.negativo {
+  background: rgba(180, 35, 24, 0.12);
+  color: #b42318;
+}
+
+.balance-positivo {
+  color: #067647;
+}
+
+.balance-negativo {
+  color: #b42318;
+}
+
+.balance-meta {
+  margin-top: 12px;
 }
 
 ion-spinner {
@@ -784,6 +869,15 @@ ion-spinner {
 @media (max-width: 360px) {
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .summary-card.full-width {
+    grid-column: auto;
+  }
+
+  .balance-top {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

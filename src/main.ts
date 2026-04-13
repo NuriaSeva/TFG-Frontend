@@ -4,6 +4,7 @@ import router from './router'
 
 import { IonicVue } from '@ionic/vue'
 import { App as CapacitorApp } from '@capacitor/app'
+import VueApexCharts from 'vue3-apexcharts'
 
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'
@@ -18,9 +19,11 @@ import '@ionic/vue/css/display.css'
 import '@ionic/vue/css/palettes/dark.system.css'
 import './theme/variables.css'
 
+
 const app = createApp(App)
   .use(IonicVue)
   .use(router)
+  .use(VueApexCharts)
 
 router.isReady().then(() => {
   CapacitorApp.addListener('appUrlOpen', async ({ url }) => {

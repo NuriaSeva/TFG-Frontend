@@ -13,6 +13,10 @@
           <ion-icon :icon="swapHorizontalOutline" />
           <ion-label>Movimientos</ion-label>
         </ion-tab-button>
+            <ion-tab-button tab="graficos" href="/visualizaciones">
+          <ion-icon :icon="pieChartOutline" />
+          <ion-label>Gráficos</ion-label>
+        </ion-tab-button>
 
         <ion-tab-button tab="ajustes" href="/ajustes">
           <ion-icon :icon="settingsOutline" />
@@ -36,7 +40,8 @@ import {
 import {
   homeOutline,
   swapHorizontalOutline,
-  settingsOutline
+  settingsOutline,
+  pieChartOutline 
 } from 'ionicons/icons'
 </script>
 

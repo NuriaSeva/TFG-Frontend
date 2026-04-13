@@ -68,7 +68,7 @@ const onIniciarSesion = async () => {
       <div class="contenedor">
         <section class="cabecera">
           <div class="marca">
-            <h1>FindMind</h1>
+            <h1>FinMind</h1>
             <p>Entiende tu dinero, toma mejores decisiones</p>
           </div>
         </section>
