@@ -1,0 +1,33 @@
+.custom-toolbar {
+  --background: var(--finmind-color-primary);
+  --color: #ffffff;
+}
+
+.home-content,
+.movements-content,
+.categories-content,
+.settings-content,
+.visualizaciones-content,
+.pagina-autenticacion {
+  --background: var(--finmind-color-page);
+}
+
+.home-content .page-shell,
+.movements-content .page-shell,
+.categories-content .page-shell,
+.settings-content .page-shell {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.home-wrapper,
+.movements-wrapper,
+.categories-wrapper,
+.settings-wrapper {
+  width: 100%;
+  max-width: 430px;
+  padding: 18px 16px 28px;
+  display: flex;
+  flex-direction: column;
+}

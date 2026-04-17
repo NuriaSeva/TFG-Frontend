@@ -1,6 +1,5 @@
+import { API_BASE_URL } from './api'
 import { crearHeadersAutenticacion } from './httpService'
-
-const API_BASE_URL = 'http://10.0.2.2:5047'
 
 export interface CuentaBancariaResponse {
   id: string

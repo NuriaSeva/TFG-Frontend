@@ -9,12 +9,6 @@ import {
   IonContent,
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonCard,
-  IonCardContent,
-  IonChip,
   IonText,
   IonSpinner,
   IonButtons,
@@ -84,6 +78,29 @@ const categoriasFiltradas = computed(() => {
 
 const totalActivas = computed(() => categorias.value.filter(c => !c.archivada).length)
 const totalArchivadas = computed(() => categorias.value.filter(c => c.archivada).length)
+
+const subtituloActual = computed(() => {
+  if (filtroArchivado.value === 'archivadas') {
+    return 'Categorías archivadas'
+  }
+
+  return 'Categorías activas'
+})
+
+const textoResumen = computed(() => {
+  const total = categoriasFiltradas.value.length
+  const bloque = filtroArchivado.value === 'archivadas' ? 'archivadas' : 'activas'
+
+  if (filtroTipo.value === 'gastos') {
+    return `${total} categoría${total === 1 ? '' : 's'} de gasto ${bloque}`
+  }
+
+  if (filtroTipo.value === 'ingresos') {
+    return `${total} categoría${total === 1 ? '' : 's'} de ingreso ${bloque}`
+  }
+
+  return `${total} categoría${total === 1 ? '' : 's'} ${bloque}`
+})
 
 const abrirCrearCategoria = () => {
   modoModal.value = 'crear'
@@ -184,6 +201,14 @@ const textoEstado = (categoria: Categoria) => {
   return categoria.tipo === 1 ? 'Ingreso' : 'Gasto'
 }
 
+const setFiltroTipo = (valor: 'todas' | 'gastos' | 'ingresos') => {
+  filtroTipo.value = valor
+}
+
+const setFiltroArchivado = (valor: 'activas' | 'archivadas') => {
+  filtroArchivado.value = valor
+}
+
 const mostrarToast = async (
   message: string,
   color: 'success' | 'danger' | 'warning' | 'primary' = 'success'
@@ -201,135 +226,157 @@ const mostrarToast = async (
 
 <template>
   <ion-page>
-    <ion-header translucent>
-      <ion-toolbar class="toolbar-principal">
-        <ion-title>Categorías</ion-title>
-        <ion-buttons slot="end">
-          <ion-button @click="refrescar">
+    <ion-header class="ion-no-border">
+      <ion-toolbar class="custom-toolbar">
+        <div class="topbar">
+          <div>
+            <h1 class="topbar-title">Categorías</h1>
+            <p class="topbar-subtitle">{{ subtituloActual }}</p>
+          </div>
+
+          <button class="refresh-button" type="button" @click="refrescar" aria-label="Actualizar">
             <ion-icon :icon="refreshOutline" />
-          </ion-button>
-        </ion-buttons>
+          </button>
+        </div>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="pagina-categorias">
-      <div class="cabecera-resumen">
-        <div>
-          <h2>Gestiona tus categorías</h2>
-          <p>Organiza ingresos y gastos de forma sencilla.</p>
-        </div>
+    <ion-content class="categories-content">
+      <div class="page-shell">
+        <div class="categories-wrapper">
+          <section class="filters-card">
+            <div class="filters-header-row">
+              <div>
+                <h2 class="section-title">Gestiona tus categorías</h2>
+              </div>
 
-        <ion-button class="boton-crear" @click="abrirCrearCategoria">
-          <ion-icon slot="start" :icon="addOutline" />
-          Nueva
-        </ion-button>
-      </div>
+              <ion-button class="create-button" @click="abrirCrearCategoria">
+                <ion-icon slot="start" :icon="addOutline" />
+                Nueva
+              </ion-button>
+            </div>
 
-      <div class="chips-resumen">
-        <ion-chip class="chip-resumen">
-          <ion-label>Activas: {{ totalActivas }}</ion-label>
-        </ion-chip>
-        <ion-chip class="chip-resumen chip-secundario">
-          <ion-label>Archivadas: {{ totalArchivadas }}</ion-label>
-        </ion-chip>
-      </div>
+            <div class="summary-chips">
+              <span class="summary-chip">Activas: {{ totalActivas }}</span>
+              <span class="summary-chip secondary">Archivadas: {{ totalArchivadas }}</span>
+            </div>
 
-      <div class="bloque-filtros">
-        <ion-segment v-model="filtroTipo" class="segmento-tipo">
-          <ion-segment-button value="todas">
-            <ion-label>Todas</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="gastos">
-            <ion-label>Gastos</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="ingresos">
-            <ion-label>Ingresos</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-
-        <ion-segment v-model="filtroArchivado" class="segmento-archivado">
-          <ion-segment-button value="activas">
-            <ion-label>Activas</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="archivadas">
-            <ion-label>Archivadas</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-      </div>
-
-      <div v-if="cargando" class="estado-carga">
-        <ion-spinner name="crescent" />
-        <ion-text color="medium">Cargando categorías...</ion-text>
-      </div>
-
-      <div v-else-if="categoriasFiltradas.length === 0" class="estado-vacio">
-        <ion-icon :icon="fileTrayOutline" />
-        <h3>No hay categorías para mostrar</h3>
-        <p>
-          {{
-            filtroArchivado === 'archivadas'
-              ? 'Todavía no tienes categorías archivadas con este filtro.'
-              : 'Crea tu primera categoría personalizada para empezar.'
-          }}
-        </p>
-      </div>
-
-      <div v-else class="listado-categorias">
-        <ion-card
-          v-for="categoria in categoriasFiltradas"
-          :key="categoria.id"
-          class="tarjeta-categoria"
-        >
-          <ion-card-content>
-            <div class="fila-superior">
-              <div class="info-categoria">
-                <div class="titulo-linea">
-                  <span
-                    class="punto-color"
-                    :style="{ backgroundColor: categoria.color || '#233f6b' }"
-                  />
-                  <h3>{{ categoria.nombre }}</h3>
-                </div>
-
-                <div class="chips-linea">
-                  <ion-chip class="chip-tipo">
-                    <ion-label>{{ textoEstado(categoria) }}</ion-label>
-                  </ion-chip>
-
-                  <ion-chip v-if="categoria.esSistema" class="chip-sistema">
-                    <ion-label>Sistema</ion-label>
-                  </ion-chip>
-                </div>
+            <div class="filter-block">
+              <label class="filter-label">Tipo</label>
+              <div class="chips-row">
+                <button
+                  class="filter-chip"
+                  :class="{ active: filtroTipo === 'todas' }"
+                  @click="setFiltroTipo('todas')"
+                >
+                  Todas
+                </button>
+                <button
+                  class="filter-chip"
+                  :class="{ active: filtroTipo === 'gastos' }"
+                  @click="setFiltroTipo('gastos')"
+                >
+                  Gastos
+                </button>
+                <button
+                  class="filter-chip"
+                  :class="{ active: filtroTipo === 'ingresos' }"
+                  @click="setFiltroTipo('ingresos')"
+                >
+                  Ingresos
+                </button>
               </div>
             </div>
 
-            <div v-if="categoria.icono" class="detalle-secundario">
-              Icono: {{ categoria.icono }}
+            <div class="filter-block filter-block-last">
+              <label class="filter-label">Estado</label>
+              <div class="chips-row">
+                <button
+                  class="filter-chip"
+                  :class="{ active: filtroArchivado === 'activas' }"
+                  @click="setFiltroArchivado('activas')"
+                >
+                  Activas
+                </button>
+                <button
+                  class="filter-chip"
+                  :class="{ active: filtroArchivado === 'archivadas' }"
+                  @click="setFiltroArchivado('archivadas')"
+                >
+                  Archivadas
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="!cargando" class="summary-strip">
+            <p>{{ textoResumen }}</p>
+          </section>
+
+          <section class="categories-section">
+            <div v-if="cargando" class="loading-state">
+              <ion-spinner name="crescent" />
+              <p>Cargando categorías...</p>
             </div>
 
-            <div class="acciones-categoria">
-              <ion-button
-                fill="outline"
-                size="small"
-                class="boton-secundario"
-                @click="abrirEditarCategoria(categoria)"
-              >
-                <ion-icon slot="start" :icon="createOutline" />
-                Editar
-              </ion-button>
-
-              <ion-button
-                fill="clear"
-                size="small"
-                class="boton-archivar"
-                @click="onCambiarArchivado(categoria, !categoria.archivada)"
-              >
-                <ion-icon slot="start" :icon="archiveOutline" />
-                {{ categoria.archivada ? 'Desarchivar' : 'Archivar' }}
-              </ion-button>
+            <div v-else-if="categoriasFiltradas.length === 0" class="empty-state">
+              <ion-icon :icon="fileTrayOutline" />
+              <h4>No hay categorías</h4>
+              <p>
+                {{
+                  filtroArchivado === 'archivadas'
+                    ? 'No hay categorías archivadas con este filtro.'
+                    : 'Crea tu primera categoría personalizada para empezar.'
+                }}
+              </p>
             </div>
-          </ion-card-content>
-        </ion-card>
+
+            <div v-else class="categories-card">
+              <div
+                v-for="categoria in categoriasFiltradas"
+                :key="categoria.id"
+                class="category-item"
+              >
+                <div class="category-left">
+                  <div class="category-icon" :class="categoria.tipo === 1 ? 'income' : 'expense'">
+                    <span
+                      class="color-dot"
+                      :style="{ backgroundColor: categoria.color || '#233f6b' }"
+                    />
+                  </div>
+
+                  <div class="category-text">
+                    <h4>{{ categoria.nombre }}</h4>
+                    <div class="category-meta">
+                      <span class="category-tag">{{ textoEstado(categoria) }}</span>
+                      <span v-if="categoria.esSistema" class="category-tag system">Sistema</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="category-right">
+                  <button
+                    class="edit-category-button"
+                    type="button"
+                    @click="abrirEditarCategoria(categoria)"
+                  >
+                    <ion-icon :icon="createOutline" />
+                    <span>Editar</span>
+                  </button>
+
+                  <button
+                    class="archive-category-button"
+                    type="button"
+                    @click="onCambiarArchivado(categoria, !categoria.archivada)"
+                  >
+                    <ion-icon :icon="archiveOutline" />
+                    <span>{{ categoria.archivada ? 'Desarchivar' : 'Archivar' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
 
       <CategoriaModal
@@ -344,184 +391,243 @@ const mostrarToast = async (
 </template>
 
 <style scoped>
-.toolbar-principal {
-  --background: #233f6b;
-  --color: #ffffff;
-}
-
-.pagina-categorias {
-  --background: #f2f0ef;
-}
-
-.cabecera-resumen {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+.categories-wrapper {
   gap: 14px;
-  padding: 18px 16px 8px;
 }
 
-.cabecera-resumen h2 {
+.categories-card {
+  padding: 0 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 18px;
+}
+
+.topbar-title {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #1d2b44;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
 }
 
-.cabecera-resumen p {
+.topbar-subtitle {
   margin: 6px 0 0;
-  color: #667085;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.boton-crear {
+.refresh-button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+}
+
+.filters-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.08rem;
+  color: #17181c;
+  font-weight: 800;
+}
+
+.create-button {
   --background: #f1b80f;
   --background-hover: #f1b80f;
   --background-activated: #f1b80f;
-  --color: #1b1b1f;
-  --border-radius: 14px;
-  font-weight: 700;
+  --color: #17181c;
+  --border-radius: 16px;
+  font-weight: 800;
+  text-transform: none;
 }
 
-.chips-resumen {
+.summary-chips {
+  margin-top: 14px;
   display: flex;
   gap: 10px;
-  padding: 0 16px 10px;
   flex-wrap: wrap;
 }
 
-.chip-resumen {
-  --background: #e9eef6;
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #eef1f5;
   color: #233f6b;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-.chip-secundario {
-  --background: #f5edd1;
+.summary-chip.secondary {
+  background: #f7efcf;
   color: #8a6500;
 }
 
-.bloque-filtros {
-  padding: 0 16px 10px;
+.filter-block {
+  margin-top: 16px;
 }
 
-.segmento-tipo,
-.segmento-archivado {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 4px;
-  margin-bottom: 10px;
+.filter-block-last {
+  margin-top: 14px;
 }
 
-.estado-carga,
-.estado-vacio {
-  padding: 40px 20px;
-  text-align: center;
-  color: #667085;
-}
-
-.estado-carga {
+.categories-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  align-items: center;
 }
 
-.estado-vacio ion-icon {
+.empty-state ion-icon {
   font-size: 2rem;
-  margin-bottom: 10px;
   color: #98a2b3;
 }
 
-.estado-vacio h3 {
-  margin: 0 0 8px;
-  color: #233f6b;
-}
-
-.estado-vacio p {
-  margin: 0;
-}
-
-.listado-categorias {
-  padding: 4px 16px 24px;
-}
-
-.tarjeta-categoria {
-  margin: 0 0 14px;
-  border-radius: 20px;
-  box-shadow: 0 10px 24px rgba(35, 63, 107, 0.08);
-}
-
-.fila-superior {
+.category-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #ece8e6;
 }
 
-.info-categoria {
+.category-item:last-child {
+  border-bottom: none;
+}
+
+.category-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex: 1;
   min-width: 0;
 }
 
-.titulo-linea {
+.category-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.titulo-linea h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #233f6b;
-}
-
-.punto-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.chips-linea {
+.category-icon.income {
+  background: rgba(147, 169, 194, 0.24);
+}
+
+.category-icon.expense {
+  background: rgba(241, 184, 15, 0.18);
+}
+
+.color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.62);
+}
+
+.category-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-text h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #17181c;
+}
+
+.category-meta {
+  margin-top: 7px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 10px;
 }
 
-.chip-tipo {
-  --background: #edf2fa;
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #edf2fa;
   color: #233f6b;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
-.chip-sistema {
-  --background: #fef3c7;
+.category-tag.system {
+  background: #fef3c7;
   color: #8a6500;
 }
 
-.detalle-secundario {
-  margin-top: 10px;
-  color: #667085;
-  font-size: 0.92rem;
-}
-
-.acciones-categoria {
+.category-right {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 16px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.boton-secundario {
-  --color: #233f6b;
-  --border-color: #233f6b;
-  --border-radius: 14px;
+.edit-category-button,
+.archive-category-button {
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0;
 }
 
-.boton-archivar {
-  --color: #667085;
+.edit-category-button {
+  color: #233f6b;
+}
+
+.archive-category-button {
+  color: #6f7782;
+}
+
+@media (max-width: 380px) {
+  .filters-header-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .create-button {
+    width: 100%;
+  }
+
+  .category-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .category-right {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 14px;
+  }
 }
 </style>

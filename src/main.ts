@@ -18,7 +18,11 @@ import '@ionic/vue/css/flex-utils.css'
 import '@ionic/vue/css/display.css'
 import '@ionic/vue/css/palettes/dark.system.css'
 import './theme/variables.css'
+import './styles/index.css'
+import { inicializarAccesibilidad } from '@/services/accesibilidadService'
 
+
+inicializarAccesibilidad()
 
 const app = createApp(App)
   .use(IonicVue)

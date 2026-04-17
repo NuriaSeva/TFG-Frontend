@@ -10,7 +10,12 @@ import {
   IonSpinner,
   toastController
 } from '@ionic/vue'
-import { registrarUsuario, guardarSesion } from '@/services/autenticacionService'
+import {
+  REQUISITOS_PASSWORD,
+  registrarUsuario,
+  guardarSesion,
+  validarPasswordSegura
+} from '@/services/autenticacionService'
 
 const router = useRouter()
 
@@ -20,6 +25,15 @@ const email = ref('')
 const password = ref('')
 const repetirPassword = ref('')
 const cargando = ref(false)
+
+const erroresPassword = computed(() => {
+  if (!password.value) return []
+  return validarPasswordSegura(password.value)
+})
+
+const passwordSegura = computed(() => {
+  return password.value !== '' && erroresPassword.value.length === 0
+})
 
 const passwordsCoinciden = computed(() => {
   return password.value !== '' && password.value === repetirPassword.value
@@ -31,9 +45,29 @@ const formularioValido = computed(() => {
     email.value.trim() !== '' &&
     password.value.trim() !== '' &&
     repetirPassword.value.trim() !== '' &&
+    passwordSegura.value &&
     passwordsCoinciden.value
   )
 })
+
+const cumpleRequisito = (requisito: string): boolean => {
+  const texto = password.value
+
+  switch (requisito) {
+    case 'Al menos 8 caracteres':
+      return texto.length >= 8
+    case 'Una letra mayúscula':
+      return /[A-ZÁÉÍÓÚÜÑ]/.test(texto)
+    case 'Una letra minúscula':
+      return /[a-záéíóúüñ]/.test(texto)
+    case 'Un número':
+      return /\d/.test(texto)
+    case 'Un carácter especial':
+      return /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(texto)
+    default:
+      return false
+  }
+}
 
 const irAInicioSesion = async () => {
   await router.push('/inicio-sesion')
@@ -65,7 +99,7 @@ const onRegistrar = async () => {
   } catch (error: any) {
     const toast = await toastController.create({
       message: error?.message || 'No se pudo completar el registro.',
-      duration: 2600,
+      duration: 2800,
       position: 'bottom',
       color: 'danger'
     })
@@ -122,6 +156,19 @@ const onRegistrar = async () => {
               class="campo"
             />
 
+            <div v-if="password" class="password-box">
+              <p class="password-box-title">La contraseña debe incluir:</p>
+              <ul class="password-rules-list">
+                <li
+                  v-for="requisito in REQUISITOS_PASSWORD"
+                  :key="requisito"
+                  :class="cumpleRequisito(requisito) ? 'cumplido' : 'pendiente'"
+                >
+                  {{ requisito }}
+                </li>
+              </ul>
+            </div>
+
             <ion-input
               v-model="repetirPassword"
               type="password"
@@ -130,7 +177,19 @@ const onRegistrar = async () => {
               class="campo"
             />
 
-            <ion-text v-if="repetirPassword && !passwordsCoinciden" color="danger" class="texto-ayuda">
+            <ion-text
+              v-if="password && !passwordSegura"
+              color="danger"
+              class="texto-ayuda"
+            >
+              {{ erroresPassword[0] }}
+            </ion-text>
+
+            <ion-text
+              v-if="repetirPassword && !passwordsCoinciden"
+              color="danger"
+              class="texto-ayuda"
+            >
               Las contraseñas no coinciden.
             </ion-text>
 
@@ -164,28 +223,9 @@ const onRegistrar = async () => {
 </template>
 
 <style scoped>
-.pagina-autenticacion {
-  --background: #f2f0ef;
-}
-
-.contenedor {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 .cabecera {
-  background: #233f6b;
   min-height: 220px;
   padding: 48px 24px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.marca {
-  text-align: center;
-  color: #ffffff;
 }
 
 .marca h1 {
@@ -194,32 +234,53 @@ const onRegistrar = async () => {
   font-weight: 700;
 }
 
-.marca p {
-  margin: 10px 0 0;
-  font-size: 0.95rem;
-  opacity: 0.95;
-}
-
 .tarjeta-formulario {
-  flex: 1;
-  margin-top: -22px;
-  background: #f8f7f6;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
   padding: 26px 22px 36px;
 }
 
-.formulario {
-  max-width: 420px;
-  margin: 0 auto;
+.password-box {
+  background: #ffffff;
+  border: 1px solid rgba(35, 63, 107, 0.08);
+  border-radius: 16px;
+  padding: 14px 14px 10px;
+  margin: -2px 0 14px;
 }
 
-.campo {
-  --background: #ffffff;
-  --border-radius: 14px;
-  --padding-start: 14px;
-  --padding-end: 14px;
-  margin-bottom: 14px;
+.password-box-title {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #233f6b;
+}
+
+.password-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.password-rules-list li {
+  font-size: 0.88rem;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-rules-list li::before {
+  content: '•';
+  font-size: 1rem;
+}
+
+.password-rules-list li.cumplido {
+  color: #127a3f;
+}
+
+.password-rules-list li.pendiente {
+  color: #8a2432;
 }
 
 .texto-ayuda {
@@ -240,23 +301,7 @@ const onRegistrar = async () => {
   min-height: 48px;
 }
 
-.pie-formulario {
-  margin-top: 18px;
-  text-align: center;
-  font-size: 0.92rem;
-}
-
 .enlace-texto {
-  margin-left: 6px;
-  background: transparent;
-  border: none;
-  padding: 0;
   color: #233f6b;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.enlace-texto:active {
-  opacity: 0.8;
 }
 </style>

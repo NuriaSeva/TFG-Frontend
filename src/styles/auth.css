@@ -1,0 +1,63 @@
+.contenedor {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cabecera {
+  background: var(--finmind-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marca {
+  text-align: center;
+  color: #ffffff;
+}
+
+.marca p {
+  margin: 10px 0 0;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.tarjeta-formulario {
+  flex: 1;
+  margin-top: -22px;
+  background: var(--finmind-color-surface-muted);
+  border-top-left-radius: 26px;
+  border-top-right-radius: 26px;
+}
+
+.formulario {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.campo {
+  --background: #ffffff;
+  --border-radius: 14px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  margin-bottom: 14px;
+}
+
+.pie-formulario {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.92rem;
+}
+
+.enlace-texto {
+  margin-left: 6px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.enlace-texto:active {
+  opacity: 0.8;
+}

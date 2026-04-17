@@ -1,2 +1,233 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/* FinMind theme + accesibilidad */
+
+:root {
+  --ion-font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --ion-color-primary: #233f6b;
+  --ion-color-primary-rgb: 35, 63, 107;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #1f385f;
+  --ion-color-primary-tint: #39527a;
+
+  --ion-color-secondary: #f1b80f;
+  --ion-color-secondary-rgb: 241, 184, 15;
+  --ion-color-secondary-contrast: #17181c;
+  --ion-color-secondary-shade: #d4a20d;
+  --ion-color-secondary-tint: #f3bf27;
+
+  --ion-color-success: #1f8b4c;
+  --ion-color-danger: #b43a3a;
+  --ion-color-warning: #d97706;
+  --ion-color-medium: #607080;
+  --ion-background-color: #f2f0ef;
+  --ion-text-color: #17181c;
+
+  --fm-brand: #233f6b;
+  --fm-brand-strong: #183357;
+  --fm-accent: #f1b80f;
+  --fm-bg: #f2f0ef;
+  --fm-surface: #ffffff;
+  --fm-surface-soft: #f8f7f6;
+  --fm-text-primary: #17181c;
+  --fm-text-secondary: #536071;
+  --fm-border: #ece8e4;
+  --fm-border-strong: #d8d2cc;
+  --fm-focus-ring: rgba(241, 184, 15, 0.45);
+  --fm-shadow-card: 0 14px 32px rgba(35, 63, 107, 0.08);
+  --fm-shadow-soft: 0 8px 20px rgba(35, 63, 107, 0.06);
+
+  --fm-text-scale: 1;
+  --fm-touch-target: 44px;
+
+  /* Aliases para estilos compartidos */
+  --finmind-color-primary: var(--fm-brand);
+  --finmind-color-accent: var(--fm-accent);
+  --finmind-color-page: var(--fm-bg);
+  --finmind-color-surface: var(--fm-surface);
+  --finmind-color-surface-soft: var(--fm-surface-soft);
+  --finmind-color-surface-muted: #f6f3f1;
+  --finmind-text-primary: var(--fm-text-primary);
+  --finmind-text-secondary: var(--fm-text-secondary);
+  --finmind-shadow-card: var(--fm-shadow-card);
+  --finmind-radius-card-lg: 24px;
+  --finmind-radius-card-md: 20px;
+  --finmind-radius-control: 16px;
+  --finmind-radius-pill: 999px;
+}
+
+html[data-fm-text-size='normal'] {
+  --fm-text-scale: 1;
+}
+
+html[data-fm-text-size='grande'] {
+  --fm-text-scale: 1.1;
+}
+
+html[data-fm-text-size='muy-grande'] {
+  --fm-text-scale: 1.2;
+}
+
+html {
+  font-size: calc(16px * var(--fm-text-scale));
+}
+
+body {
+  background: var(--fm-bg);
+  color: var(--fm-text-primary);
+  line-height: 1.45;
+}
+
+ion-content {
+  --background: var(--fm-bg);
+}
+
+ion-modal {
+  --border-radius: 24px 24px 0 0;
+}
+
+button,
+input,
+textarea,
+select,
+ion-button,
+ion-input,
+ion-select,
+ion-toggle {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+ion-button:focus-visible,
+ion-input:focus-within,
+ion-select:focus-within,
+ion-toggle:focus-visible {
+  outline: 3px solid var(--fm-focus-ring);
+  outline-offset: 2px;
+}
+
+.profile-button,
+.refresh-button,
+.filter-chip,
+.fab-add-button,
+.sync-mini-button,
+.edit-movement-button,
+.edit-category-button,
+.archive-category-button,
+.unlink-button,
+.settings-row,
+.create-button,
+.connect-button,
+.load-more-button,
+.enlace-texto,
+.password-item,
+.item-formulario,
+.search-box,
+.custom-select,
+.filter-item,
+ion-item {
+  min-height: var(--fm-touch-target);
+}
+
+html.fm-comfort-touch {
+  --fm-touch-target: 52px;
+}
+
+html.fm-comfort-touch .filter-chip,
+html.fm-comfort-touch .settings-row,
+html.fm-comfort-touch .create-button,
+html.fm-comfort-touch .connect-button,
+html.fm-comfort-touch .load-more-button,
+html.fm-comfort-touch .sync-mini-button,
+html.fm-comfort-touch .unlink-button,
+html.fm-comfort-touch .edit-movement-button,
+html.fm-comfort-touch .edit-category-button,
+html.fm-comfort-touch .archive-category-button {
+  min-height: var(--fm-touch-target) !important;
+}
+
+html.fm-comfort-touch .profile-button,
+html.fm-comfort-touch .refresh-button,
+html.fm-comfort-touch .fab-add-button {
+  width: var(--fm-touch-target) !important;
+  height: var(--fm-touch-target) !important;
+}
+
+html.fm-comfort-touch .filter-chip {
+  padding-top: 0.8rem !important;
+  padding-bottom: 0.8rem !important;
+}
+
+html.fm-reduce-motion *,
+html.fm-reduce-motion *::before,
+html.fm-reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.fm-high-contrast {
+  --ion-background-color: #ebe8e5;
+  --ion-text-color: #101317;
+  --fm-bg: #ebe8e5;
+  --fm-surface: #ffffff;
+  --fm-surface-soft: #ffffff;
+  --fm-text-primary: #101317;
+  --fm-text-secondary: #2f3944;
+  --fm-brand: #16355e;
+  --fm-brand-strong: #102847;
+  --fm-accent: #ca9800;
+  --fm-border: #bfc8d1;
+  --fm-border-strong: #8d99a6;
+  --fm-focus-ring: rgba(22, 53, 94, 0.35);
+  --fm-shadow-card: none;
+  --fm-shadow-soft: none;
+}
+
+html.fm-high-contrast .custom-toolbar {
+  --background: var(--fm-brand) !important;
+}
+
+html.fm-high-contrast .section-card,
+html.fm-high-contrast .summary-card,
+html.fm-high-contrast .account-card,
+html.fm-high-contrast .day-card,
+html.fm-high-contrast .settings-list,
+html.fm-high-contrast .filters-card,
+html.fm-high-contrast .categories-card,
+html.fm-high-contrast .password-item,
+html.fm-high-contrast .item-formulario,
+html.fm-high-contrast .search-box,
+html.fm-high-contrast .custom-select,
+html.fm-high-contrast .filter-item,
+html.fm-high-contrast .settings-row,
+html.fm-high-contrast .password-rules,
+html.fm-high-contrast .password-validation-box {
+  border: 1.5px solid var(--fm-border-strong) !important;
+  box-shadow: none !important;
+}
+
+html.fm-high-contrast .topbar-subtitle,
+html.fm-high-contrast .topbar-date {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+html.fm-high-contrast .summary-meta,
+html.fm-high-contrast .movement-meta,
+html.fm-high-contrast .filter-label,
+html.fm-high-contrast .sync-line-label,
+html.fm-high-contrast .section-title,
+html.fm-high-contrast .settings-arrow,
+html.fm-high-contrast .bank-summary-label,
+html.fm-high-contrast .password-rules-list,
+html.fm-high-contrast .settings-select {
+  color: var(--fm-text-secondary) !important;
+}
+
+html.fm-high-contrast .balance-badge.positivo,
+html.fm-high-contrast .balance-badge.negativo,
+html.fm-high-contrast .summary-chip.ingresos,
+html.fm-high-contrast .summary-chip.gastos {
+  border: 1px solid currentColor;
+}

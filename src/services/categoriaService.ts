@@ -1,6 +1,7 @@
+import { API_BASE_URL } from './api'
 import { crearHeadersAutenticacion } from './httpService'
 
-const API_BASE_URL = 'http://10.0.2.2:5047/api/categorias'
+const CATEGORIAS_API_URL = `${API_BASE_URL}/api/categorias`
 
 export interface Categoria {
   id: string
@@ -34,7 +35,7 @@ export interface ActualizarCategoriaRequest {
 }
 
 export const getCategorias = async (): Promise<Categoria[]> => {
-  const response = await fetch(`${API_BASE_URL}/obtener`, {
+  const response = await fetch(`${CATEGORIAS_API_URL}/obtener`, {
     method: 'GET',
     headers: crearHeadersAutenticacion()
   })
@@ -49,7 +50,7 @@ export const getCategorias = async (): Promise<Categoria[]> => {
 }
 
 export const crearCategoria = async (payload: CrearCategoriaRequest): Promise<Categoria> => {
-  const response = await fetch(`${API_BASE_URL}/crear`, {
+  const response = await fetch(`${CATEGORIAS_API_URL}/crear`, {
     method: 'POST',
     headers: crearHeadersAutenticacion(true),
     body: JSON.stringify(payload)
@@ -64,7 +65,7 @@ export const crearCategoria = async (payload: CrearCategoriaRequest): Promise<Ca
 }
 
 export const actualizarCategoria = async (payload: ActualizarCategoriaRequest) => {
-  const response = await fetch(`${API_BASE_URL}/modificar/${payload.id}`, {
+  const response = await fetch(`${CATEGORIAS_API_URL}/modificar/${payload.id}`, {
     method: 'PUT',
     headers: crearHeadersAutenticacion(true),
     body: JSON.stringify(payload)
@@ -85,7 +86,7 @@ export const cambiarArchivadoCategoria = async (
   categoria: Categoria,
   archivada: boolean
 ) => {
-  const response = await fetch(`${API_BASE_URL}/modificar/${categoria.id}`, {
+  const response = await fetch(`${CATEGORIAS_API_URL}/modificar/${categoria.id}`, {
     method: 'PUT',
     headers: crearHeadersAutenticacion(true),
     body: JSON.stringify({

@@ -123,28 +123,9 @@ const onIniciarSesion = async () => {
 </template>
 
 <style scoped>
-.pagina-autenticacion {
-  --background: #f2f0ef;
-}
-
-.contenedor {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 .cabecera {
-  background: #233f6b;
   min-height: 230px;
   padding: 56px 24px 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.marca {
-  text-align: center;
-  color: #ffffff;
 }
 
 .marca h1 {
@@ -154,32 +135,8 @@ const onIniciarSesion = async () => {
   letter-spacing: 0.2px;
 }
 
-.marca p {
-  margin: 10px 0 0;
-  font-size: 0.95rem;
-  opacity: 0.95;
-}
-
 .tarjeta-formulario {
-  flex: 1;
-  margin-top: -22px;
-  background: #f8f7f6;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
   padding: 28px 22px 36px;
-}
-
-.formulario {
-  max-width: 420px;
-  margin: 0 auto;
-}
-
-.campo {
-  --background: #ffffff;
-  --border-radius: 14px;
-  --padding-start: 14px;
-  --padding-end: 14px;
-  margin-bottom: 14px;
 }
 
 .boton-principal {
@@ -193,23 +150,7 @@ const onIniciarSesion = async () => {
   min-height: 48px;
 }
 
-.pie-formulario {
-  margin-top: 18px;
-  text-align: center;
-  font-size: 0.92rem;
-}
-
 .enlace-texto {
-  margin-left: 6px;
-  background: transparent;
-  border: none;
-  padding: 0;
   color: #f1b80f;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.enlace-texto:active {
-  opacity: 0.8;
 }
 </style>

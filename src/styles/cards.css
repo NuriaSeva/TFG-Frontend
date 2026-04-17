@@ -1,0 +1,43 @@
+.account-card,
+.filters-card,
+.settings-list,
+.categories-card,
+.day-card,
+.section-card,
+.password-form-card,
+.loading-state,
+.empty-state,
+.error-state {
+  background: var(--finmind-color-surface);
+  box-shadow: var(--finmind-shadow-card);
+}
+
+.account-card,
+.filters-card,
+.section-card,
+.password-form-card {
+  border-radius: var(--finmind-radius-card-lg);
+}
+
+.settings-list,
+.categories-card,
+.day-card,
+.loading-state,
+.empty-state,
+.error-state {
+  border-radius: var(--finmind-radius-card-md);
+}
+
+.loading-state,
+.empty-state,
+.error-state {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--finmind-text-secondary);
+}
+
+.empty-state h4 {
+  margin: 10px 0 6px;
+  color: var(--finmind-text-primary);
+  font-size: 1.06rem;
+}

@@ -1,6 +1,7 @@
+import { API_BASE_URL } from './api'
 import { crearHeadersAutenticacion } from './httpService'
 
-const API_BASE_URL = 'http://10.0.2.2:5047/api/dashboard'
+const DASHBOARD_API_URL = `${API_BASE_URL}/api/dashboard`
 
 export interface DashboardResumenResponse {
   gastosMes: number
@@ -29,34 +30,6 @@ export interface DashboardVisualizacionesResponse {
   evolucionUltimosMeses: DashboardEvolucionMensualResponse[]
 }
 
-export const getResumenMesActual = async (): Promise<DashboardResumenResponse> => {
-  const response = await fetch(`${API_BASE_URL}/resumen`, {
-    method: 'GET',
-    headers: crearHeadersAutenticacion()
-  })
-
-  if (!response.ok) {
-    const errorText = (await response.text()).trim()
-    throw new Error(`[${response.status}] ${errorText || 'No se pudo cargar el resumen del mes.'}`)
-  }
-
-  return await response.json()
-}
-
-export const getVisualizaciones = async (): Promise<DashboardVisualizacionesResponse> => {
-  const response = await fetch(`${API_BASE_URL}/visualizaciones`, {
-    method: 'GET',
-    headers: crearHeadersAutenticacion()
-  })
-
-  if (!response.ok) {
-    const errorText = (await response.text()).trim()
-    throw new Error(`[${response.status}] ${errorText || 'No se pudieron cargar las visualizaciones.'}`)
-  }
-
-  return await response.json()
-}
-
 export interface DashboardMapaCalorDiaResponse {
   fecha: string
   totalGasto: number
@@ -70,8 +43,57 @@ export interface DashboardMapaCalorResponse {
   dias: DashboardMapaCalorDiaResponse[]
 }
 
-export const getMapaCalorMesActual = async (): Promise<DashboardMapaCalorResponse> => {
-  const response = await fetch(`${API_BASE_URL}/mapa-calor`, {
+export interface FiltroDashboardParams {
+  mes?: number | null
+  anio?: number | null
+}
+
+const construirQuery = (params?: FiltroDashboardParams) => {
+  const query = new URLSearchParams()
+
+  if (params?.mes != null) query.append('mes', String(params.mes))
+  if (params?.anio != null) query.append('anio', String(params.anio))
+
+  const queryString = query.toString()
+  return queryString ? `?${queryString}` : ''
+}
+
+export const getResumenMesActual = async (
+  params?: FiltroDashboardParams
+): Promise<DashboardResumenResponse> => {
+  const response = await fetch(`${DASHBOARD_API_URL}/resumen${construirQuery(params)}`, {
+    method: 'GET',
+    headers: crearHeadersAutenticacion()
+  })
+
+  if (!response.ok) {
+    const errorText = (await response.text()).trim()
+    throw new Error(`[${response.status}] ${errorText || 'No se pudo cargar el resumen del mes.'}`)
+  }
+
+  return await response.json()
+}
+
+export const getVisualizaciones = async (
+  params?: FiltroDashboardParams
+): Promise<DashboardVisualizacionesResponse> => {
+  const response = await fetch(`${DASHBOARD_API_URL}/visualizaciones${construirQuery(params)}`, {
+    method: 'GET',
+    headers: crearHeadersAutenticacion()
+  })
+
+  if (!response.ok) {
+    const errorText = (await response.text()).trim()
+    throw new Error(`[${response.status}] ${errorText || 'No se pudieron cargar las visualizaciones.'}`)
+  }
+
+  return await response.json()
+}
+
+export const getMapaCalorMesActual = async (
+  params?: FiltroDashboardParams
+): Promise<DashboardMapaCalorResponse> => {
+  const response = await fetch(`${DASHBOARD_API_URL}/mapa-calor${construirQuery(params)}`, {
     method: 'GET',
     headers: crearHeadersAutenticacion()
   })

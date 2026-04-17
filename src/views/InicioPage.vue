@@ -8,7 +8,7 @@
             <p class="topbar-date">{{ fechaCabeceraFormateada }}</p>
           </div>
 
-          <button class="profile-button" type="button">
+          <button class="profile-button" type="button" aria-label="Notificaciones">
             <ion-icon :icon="notificationsOutline" />
           </button>
         </div>

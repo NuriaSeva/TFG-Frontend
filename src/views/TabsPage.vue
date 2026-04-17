@@ -45,14 +45,3 @@ import {
 } from 'ionicons/icons'
 </script>
 
-<style scoped>
-.custom-tab-bar {
-  --background: #ffffff;
-  --border: 1px solid rgba(35, 63, 107, 0.08);
-}
-
-ion-tab-button {
-  --color: #8fa3bb;
-  --color-selected: #233f6b;
-}
-</style>

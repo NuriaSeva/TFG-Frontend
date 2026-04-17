@@ -11,9 +11,14 @@ import {
   IonIcon,
   IonSpinner,
   IonText,
+  IonItem,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
   toastController
 } from '@ionic/vue'
 import { refreshOutline } from 'ionicons/icons'
+import { useAccesibilidad } from '@/services/accesibilidadService'
 import type { ApexOptions } from 'apexcharts'
 import {
   getVisualizaciones,
@@ -40,17 +45,77 @@ use([
   VisualMapComponent
 ])
 
+const hoy = new Date()
+const mesSeleccionado = ref(hoy.getMonth() + 1)
+const anioSeleccionado = ref(hoy.getFullYear())
+
 const cargando = ref(false)
 const datos = ref<DashboardVisualizacionesResponse | null>(null)
 const mapaCalor = ref<DashboardMapaCalorResponse | null>(null)
+
+const meses = [
+  { value: 1, label: 'Enero' },
+  { value: 2, label: 'Febrero' },
+  { value: 3, label: 'Marzo' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Mayo' },
+  { value: 6, label: 'Junio' },
+  { value: 7, label: 'Julio' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Septiembre' },
+  { value: 10, label: 'Octubre' },
+  { value: 11, label: 'Noviembre' },
+  { value: 12, label: 'Diciembre' }
+]
+
+const anios = Array.from({ length: 5 }, (_, index) => hoy.getFullYear() - index)
+
+const { preferenciasAccesibilidad } = useAccesibilidad()
+
+const reducirAnimaciones = computed(() => preferenciasAccesibilidad.value.reducirAnimaciones)
+const altoContraste = computed(() => preferenciasAccesibilidad.value.altoContraste)
+
+const animacionesApex = computed(() => ({
+  enabled: !reducirAnimaciones.value,
+  speed: reducirAnimaciones.value ? 0 : 650,
+  animateGradually: {
+    enabled: !reducirAnimaciones.value,
+    delay: 90
+  },
+  dynamicAnimation: {
+    enabled: !reducirAnimaciones.value,
+    speed: reducirAnimaciones.value ? 0 : 250
+  }
+}))
+
+const coloresComparativa = computed(() =>
+  altoContraste.value ? ['#d0a100', '#16355e'] : ['#f1b80f', '#233f6b']
+)
+
+const coloresDonut = computed(() =>
+  altoContraste.value
+    ? ['#16355e', '#d0a100', '#0f766e', '#7c2d12', '#5b21b6', '#365314']
+    : ['#233f6b', '#f1b80f', '#5b8def', '#12b76a', '#f97066', '#9e77ed']
+)
+
+const coloresHeatmap = computed(() =>
+  altoContraste.value
+    ? ['#ffffff', '#d6e0ec', '#89a3c4', '#355d8f', '#16355e']
+    : ['#f8fafc', '#dbe4f0', '#9eb7d6', '#4f76a8', '#233f6b']
+)
 
 const cargarDatos = async () => {
   cargando.value = true
 
   try {
+    const params = {
+      mes: mesSeleccionado.value,
+      anio: anioSeleccionado.value
+    }
+
     const [visualizaciones, heatmap] = await Promise.all([
-      getVisualizaciones(),
-      getMapaCalorMesActual()
+      getVisualizaciones(params),
+      getMapaCalorMesActual(params)
     ])
 
     datos.value = visualizaciones
@@ -72,6 +137,10 @@ const cargarDatos = async () => {
 onIonViewWillEnter(async () => {
   await cargarDatos()
 })
+
+const onFiltroChange = async () => {
+  await cargarDatos()
+}
 
 const distribucion = computed(() => datos.value?.distribucionGastosPorCategoria ?? [])
 const evolucion = computed(() => datos.value?.evolucionUltimosMeses ?? [])
@@ -100,9 +169,10 @@ const comparativaOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'bar',
     toolbar: { show: false },
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    animations: animacionesApex.value
   },
-  colors: ['#f1b80f', '#233f6b'],
+  colors: coloresComparativa.value,
   plotOptions: {
     bar: {
       borderRadius: 10,
@@ -176,10 +246,11 @@ const categoriasDonutOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'donut',
     toolbar: { show: false },
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    animations: animacionesApex.value
   },
   labels: distribucionTop.value.map(x => x.categoria),
-  colors: ['#233f6b', '#f1b80f', '#5b8def', '#12b76a', '#f97066', '#9e77ed'],
+  colors: coloresDonut.value,
   legend: {
     position: 'bottom',
     fontSize: '13px',
@@ -224,13 +295,14 @@ const evolucionOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'line',
     toolbar: { show: false },
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    animations: animacionesApex.value
   },
   stroke: {
     curve: 'smooth',
     width: 3
   },
-  colors: ['#f1b80f', '#233f6b'],
+  colors: coloresComparativa.value,
   markers: {
     size: 4
   },
@@ -272,7 +344,7 @@ const datosMapaCalor = computed(() => {
   })
 })
 
-const heatmapOptions = computed(() => {
+const heatmapOptions = computed<any>(() => {
   if (!mapaCalor.value) return {}
 
   const rango = `${mapaCalor.value.anio}-${String(mapaCalor.value.mes).padStart(2, '0')}`
@@ -296,6 +368,7 @@ const heatmapOptions = computed(() => {
         `
       }
     },
+    animation: !reducirAnimaciones.value,
     visualMap: {
       min: 0,
       max: Math.max(Number(mapaCalor.value.maximoGastoDia ?? 0), 1),
@@ -305,7 +378,7 @@ const heatmapOptions = computed(() => {
       left: 'center',
       bottom: 0,
       inRange: {
-        color: ['#f8fafc', '#cfdced', '#8ca8cb', '#4e6f9d', '#1f3f73']
+        color: coloresHeatmap.value
       }
     },
     calendar: {
@@ -355,6 +428,7 @@ const heatmapOptions = computed(() => {
   }
 })
 </script>
+
 <template>
   <ion-page>
     <ion-header class="ion-no-border">
@@ -365,7 +439,7 @@ const heatmapOptions = computed(() => {
             <p class="topbar-subtitle">Gráficos y comparativas de tus finanzas</p>
           </div>
 
-          <ion-button fill="clear" class="refresh-button" @click="cargarDatos">
+          <ion-button fill="clear" class="refresh-button" @click="cargarDatos" aria-label="Actualizar visualizaciones">
             <ion-icon :icon="refreshOutline" />
           </ion-button>
         </div>
@@ -374,6 +448,36 @@ const heatmapOptions = computed(() => {
 
     <ion-content class="visualizaciones-content">
       <div class="page-shell">
+        <section class="section-card filtros-card">
+          <div class="filtros-grid">
+            <ion-item class="filter-item" lines="none">
+              <ion-label position="stacked">Mes</ion-label>
+              <ion-select v-model="mesSeleccionado" interface="popover" @ionChange="onFiltroChange">
+                <ion-select-option
+                  v-for="mes in meses"
+                  :key="mes.value"
+                  :value="mes.value"
+                >
+                  {{ mes.label }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+
+            <ion-item class="filter-item" lines="none">
+              <ion-label position="stacked">Año</ion-label>
+              <ion-select v-model="anioSeleccionado" interface="popover" @ionChange="onFiltroChange">
+                <ion-select-option
+                  v-for="anio in anios"
+                  :key="anio"
+                  :value="anio"
+                >
+                  {{ anio }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+        </section>
+
         <div v-if="cargando" class="estado-carga">
           <ion-spinner name="crescent" />
           <ion-text color="medium">Cargando visualizaciones...</ion-text>
@@ -383,10 +487,10 @@ const heatmapOptions = computed(() => {
           <section class="section-card">
             <div class="section-header">
               <h2>Comparativa ingresos vs gastos</h2>
-              <p>Vista general del mes actual.</p>
+              <p>Vista general del periodo seleccionado.</p>
             </div>
 
-            <div class="chart-wrapper">
+            <div class="chart-wrapper" role="img" aria-label="Gráfico de barras con la comparativa de ingresos y gastos del periodo seleccionado">
               <apexchart
                 type="bar"
                 height="320"
@@ -399,14 +503,14 @@ const heatmapOptions = computed(() => {
           <section class="section-card">
             <div class="section-header">
               <h2>Distribución de gastos por categoría</h2>
-              <p>Cómo se reparte el gasto del mes actual.</p>
+              <p>Cómo se reparte el gasto del periodo seleccionado.</p>
             </div>
 
             <div v-if="distribucion.length === 0" class="estado-vacio">
-              No hay gastos categorizados este mes.
+              No hay gastos categorizados en este periodo.
             </div>
 
-            <div v-else class="chart-wrapper">
+            <div v-else class="chart-wrapper" role="img" aria-label="Gráfico circular con la distribución de gastos por categoría">
               <apexchart
                 type="donut"
                 height="340"
@@ -419,14 +523,14 @@ const heatmapOptions = computed(() => {
           <section class="section-card">
             <div class="section-header">
               <h2>Evolución mensual</h2>
-              <p>Últimos 6 meses de ingresos y gastos.</p>
+              <p>Últimos 6 meses hasta el periodo seleccionado.</p>
             </div>
 
             <div v-if="evolucion.length === 0" class="estado-vacio">
               No hay datos suficientes para mostrar la evolución.
             </div>
 
-            <div v-else class="chart-wrapper">
+            <div v-else class="chart-wrapper" role="img" aria-label="Gráfico de líneas con la evolución mensual de ingresos y gastos">
               <apexchart
                 type="line"
                 height="340"
@@ -439,14 +543,14 @@ const heatmapOptions = computed(() => {
           <section class="section-card">
             <div class="section-header">
               <h2>Días con más gasto</h2>
-              <p>Mapa de calor del gasto diario del mes actual.</p>
+              <p>Mapa de calor del gasto diario del periodo seleccionado.</p>
             </div>
 
             <div v-if="!mapaCalor" class="estado-vacio">
               No hay datos para mostrar el mapa de calor.
             </div>
 
-            <div v-else class="heatmap-wrapper">
+            <div v-else class="heatmap-wrapper" role="img" aria-label="Mapa de calor con los días de mayor gasto del periodo seleccionado">
               <VChart class="heatmap-chart" :option="heatmapOptions" autoresize />
             </div>
           </section>
@@ -455,6 +559,7 @@ const heatmapOptions = computed(() => {
     </ion-content>
   </ion-page>
 </template>
+
 <style scoped>
 .visualizaciones-content {
   --background: #f2f0ef;
@@ -518,81 +623,19 @@ const heatmapOptions = computed(() => {
   font-size: 0.93rem;
 }
 
-.chart-wrapper {
+.filtros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-top: 16px;
 }
 
-.estado-carga,
-.estado-vacio {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 48px 20px;
-  text-align: center;
-  color: #667085;
-}
-
-.visualizaciones-content {
-  --background: #f2f0ef;
-}
-
-.custom-toolbar {
-  --background: #233f6b;
-  --min-height: 104px;
-  display: flex;
-  align-items: flex-end;
-}
-
-.topbar {
-  width: 100%;
-  padding: 20px 18px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.topbar-title {
-  margin: 0;
-  color: #ffffff;
-  font-size: 1.7rem;
-  font-weight: 700;
-}
-
-.topbar-subtitle {
-  margin: 6px 0 0;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.92rem;
-}
-
-.refresh-button {
-  --color: #ffffff;
-}
-
-.page-shell {
-  padding: 16px;
-}
-
-.section-card {
-  background: #ffffff;
-  border-radius: 24px;
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: 0 10px 24px rgba(35, 63, 107, 0.08);
-}
-
-.section-header h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #233f6b;
-}
-
-.section-header p {
-  margin: 6px 0 0;
-  color: #667085;
-  font-size: 0.93rem;
+.filter-item {
+  --background: #f8f7f6;
+  --border-radius: 16px;
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  border-radius: 16px;
 }
 
 .chart-wrapper {
@@ -617,5 +660,11 @@ const heatmapOptions = computed(() => {
   padding: 48px 20px;
   text-align: center;
   color: #667085;
+}
+
+@media (max-width: 480px) {
+  .filtros-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

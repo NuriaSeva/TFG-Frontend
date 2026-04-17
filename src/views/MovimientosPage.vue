@@ -7,6 +7,17 @@
             <h1 class="topbar-title">Tus movimientos</h1>
             <p class="topbar-subtitle">{{ nombreMesActual }}</p>
           </div>
+
+          <button
+            class="profile-button"
+            type="button"
+            @click="abrirOpcionesExportacion"
+            :disabled="exportandoCsv"
+            aria-label="Exportar movimientos"
+          >
+            <ion-spinner v-if="exportandoCsv" name="crescent" />
+            <ion-icon v-else :icon="downloadOutline" />
+          </button>
         </div>
       </ion-toolbar>
     </ion-header>
@@ -141,7 +152,7 @@
                         <h4>{{ transaccion.descripcion || 'Movimiento bancario' }}</h4>
                         <p class="movement-meta">
                           {{ formatearFechaCorta(transaccion.fecha) }}
-                         <span class="movement-tag">
+                          <span class="movement-tag">
                             {{ transaccion.categoriaNombre || 'Sin categoría' }}
                           </span>
                         </p>
@@ -196,11 +207,35 @@
       >
         <ion-icon :icon="addOutline" />
       </button>
+
       <NuevoMovimientoModal
         :abierto="mostrandoModalNuevo"
         :movimiento-inicial="movimientoSeleccionado"
         @cerrar="cerrarNuevoMovimiento"
         @guardar="onMovimientoGuardado"
+      />
+
+      <ion-action-sheet
+        :is-open="mostrandoAccionesExportacion"
+        header="¿Qué quieres exportar?"
+        :buttons="accionesExportacion"
+        @didDismiss="mostrandoAccionesExportacion = false"
+      />
+
+      <ion-action-sheet
+        :is-open="mostrandoAccionesDestinoExportacion"
+        header="¿Qué quieres hacer con el CSV?"
+        :buttons="accionesDestinoExportacion"
+        @didDismiss="mostrandoAccionesDestinoExportacion = false"
+      />
+
+      <ion-toast
+        :is-open="toastAbierto"
+        :message="toastMensaje"
+        :duration="2600"
+        :color="toastColor"
+        position="bottom"
+        @didDismiss="toastAbierto = false"
       />
     </ion-content>
   </ion-page>
@@ -208,33 +243,40 @@
 
 <script setup lang="ts">
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonContent,
-  IonIcon,
+  IonActionSheet,
   IonButton,
-  IonSpinner,
+  IonContent,
+  IonHeader,
+  IonIcon,
   IonInput,
+  IonPage,
   IonSelect,
-  IonSelectOption
+  IonSelectOption,
+  IonSpinner,
+  IonToast,
+  IonToolbar
 } from '@ionic/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import {
-  optionsOutline,
-  searchOutline,
-  receiptOutline,
+  addOutline,
   alertCircleOutline,
-  arrowUpOutline,
   arrowDownOutline,
-  addOutline
+  arrowUpOutline,
+  documentTextOutline,
+  downloadOutline,
+  folderOpenOutline,
+  funnelOutline,
+  receiptOutline,
+  searchOutline,
+  shareSocialOutline
 } from 'ionicons/icons'
 import {
+  exportarTransaccionesCsv,
   getTransaccionesPorUsuario,
+  type ModoExportacionCsv,
   type TransaccionListadoResponse
 } from '@/services/transaccionService'
 import NuevoMovimientoModal from '@/components/NuevoMovimientoModal.vue'
-
 
 const hoy = new Date()
 const mesActual = hoy.getMonth() + 1
@@ -246,6 +288,7 @@ const filtroTipo = ref<number | null>(null)
 const filtroTexto = ref('')
 
 const loading = ref(false)
+const exportandoCsv = ref(false)
 const error = ref('')
 
 const transacciones = ref<TransaccionListadoResponse[]>([])
@@ -256,6 +299,12 @@ const totalPages = ref(0)
 
 const mostrandoModalNuevo = ref(false)
 const movimientoSeleccionado = ref<TransaccionListadoResponse | null>(null)
+const mostrandoAccionesExportacion = ref(false)
+const mostrandoAccionesDestinoExportacion = ref(false)
+const exportacionPendienteTodo = ref(false)
+const toastAbierto = ref(false)
+const toastMensaje = ref('')
+const toastColor = ref<'success' | 'warning' | 'danger'>('success')
 
 const abrirNuevoMovimiento = () => {
   movimientoSeleccionado.value = null
@@ -319,6 +368,48 @@ const hayMasPaginas = computed(() => {
   return transacciones.value.length < total.value
 })
 
+const accionesExportacion = computed(() => [
+  {
+    text: 'Movimientos visibles',
+    icon: funnelOutline,
+    handler: () => {
+      prepararExportacion(false)
+    }
+  },
+  {
+    text: 'Todos los movimientos',
+    icon: documentTextOutline,
+    handler: () => {
+      prepararExportacion(true)
+    }
+  },
+  {
+    text: 'Cancelar',
+    role: 'cancel'
+  }
+])
+
+const accionesDestinoExportacion = computed(() => [
+  {
+    text: 'Guardar en dispositivo',
+    icon: folderOpenOutline,
+    handler: () => {
+      void exportarCsv(exportacionPendienteTodo.value, 'guardar')
+    }
+  },
+  {
+    text: 'Compartir CSV',
+    icon: shareSocialOutline,
+    handler: () => {
+      void exportarCsv(exportacionPendienteTodo.value, 'compartir')
+    }
+  },
+  {
+    text: 'Cancelar',
+    role: 'cancel'
+  }
+])
+
 const claveDia = (fecha: string) => {
   const d = new Date(fecha)
   const yyyy = d.getFullYear()
@@ -364,6 +455,64 @@ const transaccionesAgrupadasPorDia = computed(() => {
     items
   }))
 })
+
+const mostrarToast = (mensaje: string, color: 'success' | 'warning' | 'danger') => {
+  toastMensaje.value = mensaje
+  toastColor.value = color
+  toastAbierto.value = true
+}
+
+const abrirOpcionesExportacion = () => {
+  if (exportandoCsv.value) return
+  mostrandoAccionesExportacion.value = true
+}
+
+const prepararExportacion = (exportarTodo: boolean) => {
+  exportacionPendienteTodo.value = exportarTodo
+  mostrandoAccionesExportacion.value = false
+  mostrandoAccionesDestinoExportacion.value = true
+}
+
+const exportarCsv = async (exportarTodo: boolean, modo: ModoExportacionCsv) => {
+  if (!exportarTodo && total.value === 0) {
+    mostrarToast('No hay movimientos con los filtros actuales para exportar.', 'warning')
+    return
+  }
+
+  try {
+    exportandoCsv.value = true
+    mostrandoAccionesDestinoExportacion.value = false
+
+    const resultado = await exportarTransaccionesCsv({
+      mes: filtroMes.value,
+      anio: filtroAnio.value,
+      tipo: filtroTipo.value,
+      texto: filtroTexto.value,
+      exportarTodo
+    }, modo)
+
+    if (modo === 'guardar') {
+      const nombreArchivo = resultado?.nombreArchivo ?? 'movimientos.csv'
+      mostrarToast(`CSV guardado en Documentos/FinMind: ${nombreArchivo}`, 'success')
+      return
+    }
+
+    mostrarToast(
+      exportarTodo
+        ? 'Se ha abierto el selector para compartir todos los movimientos.'
+        : 'Se ha abierto el selector para compartir los movimientos visibles.',
+      'success'
+    )
+  } catch (e) {
+    console.error(e)
+    mostrarToast(
+      e instanceof Error ? e.message : 'No se pudieron exportar los movimientos.',
+      'danger'
+    )
+  } finally {
+    exportandoCsv.value = false
+  }
+}
 
 const cargarTransacciones = async (reset = false) => {
   try {
@@ -460,9 +609,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.custom-toolbar {
-  --background: #233f6b;
-  --color: #ffffff;
+.movements-wrapper {
+  gap: 14px;
+}
+
+.day-card {
+  padding: 0 16px;
 }
 
 .topbar {
@@ -509,30 +661,8 @@ onMounted(async () => {
   font-size: 1.1rem;
 }
 
-.movements-content {
-  --background: #f2f0ef;
-}
-
-.page-shell {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.movements-wrapper {
-  width: 100%;
-  max-width: 430px;
-  padding: 18px 16px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.filters-card {
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
-  padding: 18px;
+.profile-button:disabled {
+  opacity: 0.72;
 }
 
 .filters-header {
@@ -565,108 +695,10 @@ onMounted(async () => {
   gap: 6px;
 }
 
-.filter-label {
-  font-size: 0.88rem;
-  color: #6f7782;
-  font-weight: 700;
-}
-
-.custom-select {
-  --placeholder-color: #6f7782;
-  --placeholder-opacity: 1;
-  --color: #17181c;
-  --highlight-color-focused: transparent;
-  --padding-start: 14px;
-  --padding-end: 12px;
-  background: #f8f7f6;
-  border-radius: 16px;
-  min-height: 50px;
-  color: #17181c;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-}
-
-ion-select {
-  color: #17181c;
-}
-
-.filter-group ion-select::part(text) {
-  color: #17181c;
-  opacity: 1;
-}
-
-.filter-group ion-select::part(icon) {
-  color: #6f7782;
-  opacity: 1;
-}
-
-.search-box {
-  margin-top: 14px;
-  background: #f8f7f6;
-  border-radius: 16px;
-  padding: 0 14px;
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #6f7782;
-}
-
-.chips-row {
-  margin-top: 14px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.filter-chip {
-  border: none;
-  border-radius: 999px;
-  padding: 12px 16px;
-  background: #eef1f5;
-  color: #233f6b;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.filter-chip.active {
-  background: #f1b80f;
-  color: #17181c;
-}
-
-.summary-strip {
-  padding: 0 2px;
-}
-
-.summary-strip p {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #233f6b;
-  font-weight: 700;
-}
-
 .movements-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.loading-state,
-.empty-state,
-.error-state {
-  background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
-  padding: 28px 16px;
-  text-align: center;
-  color: #6f7782;
-}
-
-.empty-state h4 {
-  margin: 10px 0 6px;
-  color: #17181c;
-  font-size: 1.06rem;
 }
 
 .movements-list {
@@ -687,13 +719,6 @@ ion-select {
   color: #233f6b;
   padding: 2px 4px;
   text-transform: capitalize;
-}
-
-.day-card {
-  background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
-  padding: 0 16px;
 }
 
 .movement-item {

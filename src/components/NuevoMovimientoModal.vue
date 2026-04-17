@@ -156,7 +156,7 @@ const mostrarToast = async (
 </script>
 
 <template>
-  <ion-modal :is-open="abierto" @didDismiss="cerrar">
+  <ion-modal class="finmind-form-modal" :is-open="abierto" @didDismiss="cerrar">
     <ion-header class="modal-header">
       <ion-toolbar>
         <ion-title>Nuevo movimiento</ion-title>
@@ -291,33 +291,6 @@ const mostrarToast = async (
 </template>
 
 <style scoped>
-.modal-header ion-toolbar {
-  --background: #233f6b;
-  --color: #ffffff;
-}
-
-.modal-content {
-  --background: #f8f7f6;
-}
-
-.contenedor-modal {
-  padding: 18px 16px 28px;
-}
-
-.lista-formulario {
-  background: transparent;
-}
-
-.item-formulario {
-  --background: #ffffff;
-  --border-radius: 16px;
-  --padding-start: 14px;
-  --inner-padding-end: 14px;
-  margin-bottom: 14px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(35, 63, 107, 0.06);
-}
-
 .acciones-categoria {
   display: flex;
   justify-content: flex-start;
@@ -335,24 +308,5 @@ const mostrarToast = async (
   gap: 10px;
   align-items: center;
   padding: 8px 0 6px;
-}
-
-.texto-ayuda {
-  display: block;
-  margin: 4px 4px 0;
-  font-size: 0.9rem;
-}
-
-.acciones {
-  margin-top: 18px;
-}
-
-.boton-guardar {
-  --background: #233f6b;
-  --background-hover: #233f6b;
-  --background-activated: #233f6b;
-  --border-radius: 16px;
-  min-height: 48px;
-  font-weight: 600;
 }
 </style>

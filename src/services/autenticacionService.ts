@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://10.0.2.2:5047/api/autenticacion'
+import { API_BASE_URL } from './api'
+
+const AUTENTICACION_API_URL = `${API_BASE_URL}/api/autenticacion`
 
 export interface RegistroUsuarioRequest {
   email: string
@@ -10,6 +12,11 @@ export interface RegistroUsuarioRequest {
 export interface InicioSesionRequest {
   email: string
   password: string
+}
+
+export interface CambiarPasswordRequest {
+  passwordActual: string
+  passwordNueva: string
 }
 
 export interface RespuestaAutenticacion {
@@ -30,10 +37,45 @@ export interface SesionUsuario {
   expiracionToken: string
 }
 
+export const REQUISITOS_PASSWORD = [
+  'Al menos 8 caracteres',
+  'Una letra mayúscula',
+  'Una letra minúscula',
+  'Un número',
+  'Un carácter especial'
+] as const
+
+export const validarPasswordSegura = (password: string): string[] => {
+  const errores: string[] = []
+  const valor = password ?? ''
+
+  if (valor.length < 8) {
+    errores.push('La contraseña debe tener al menos 8 caracteres.')
+  }
+
+  if (!/[A-ZÁÉÍÓÚÜÑ]/.test(valor)) {
+    errores.push('La contraseña debe incluir al menos una letra mayúscula.')
+  }
+
+  if (!/[a-záéíóúüñ]/.test(valor)) {
+    errores.push('La contraseña debe incluir al menos una letra minúscula.')
+  }
+
+  if (!/\d/.test(valor)) {
+    errores.push('La contraseña debe incluir al menos un número.')
+  }
+
+  if (!/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(valor)) {
+    errores.push('La contraseña debe incluir al menos un carácter especial.')
+  }
+
+  return errores
+}
+
 export const registrarUsuario = async (
   payload: RegistroUsuarioRequest
 ): Promise<RespuestaAutenticacion> => {
-  const response = await fetch(`${API_BASE_URL}/registro`, {
+  const response = await fetch(`${AUTENTICACION_API_URL}/registro`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -53,7 +95,7 @@ export const registrarUsuario = async (
 export const iniciarSesion = async (
   payload: InicioSesionRequest
 ): Promise<RespuestaAutenticacion> => {
-  const response = await fetch(`${API_BASE_URL}/inicio-sesion`, {
+  const response = await fetch(`${AUTENTICACION_API_URL}/inicio-sesion`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -68,6 +110,30 @@ export const iniciarSesion = async (
   }
 
   return await response.json()
+}
+
+export const cambiarPassword = async (
+  payload: CambiarPasswordRequest
+): Promise<void> => {
+  const token = obtenerToken()
+  if (!token) {
+    throw new Error('Tu sesión ha caducado. Vuelve a iniciar sesión.')
+  }
+
+  const response = await fetch(`${AUTENTICACION_API_URL}/cambiar-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(extraerMensajeError(errorText, 'No se pudo cambiar la contraseña.'))
+  }
 }
 
 export const guardarSesion = (respuesta: RespuestaAutenticacion) => {
@@ -131,7 +197,7 @@ export const cerrarSesion = async () => {
 
   try {
     if (token) {
-      await fetch(`${API_BASE_URL}/cierre-sesion`, {
+      await fetch(`${AUTENTICACION_API_URL}/cierre-sesion`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',

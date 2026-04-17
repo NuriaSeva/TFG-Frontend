@@ -1,0 +1,45 @@
+.finmind-form-modal .modal-header ion-toolbar {
+  --background: var(--finmind-color-primary);
+  --color: #ffffff;
+}
+
+.finmind-form-modal .modal-content {
+  --background: var(--finmind-color-surface-muted);
+}
+
+.finmind-form-modal .contenedor-modal {
+  padding: 18px 16px 28px;
+}
+
+.finmind-form-modal .lista-formulario {
+  background: transparent;
+}
+
+.finmind-form-modal .item-formulario {
+  --background: #ffffff;
+  --border-radius: 16px;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(35, 63, 107, 0.06);
+}
+
+.finmind-form-modal .texto-ayuda {
+  display: block;
+  margin: 6px 4px 0;
+  font-size: 0.9rem;
+}
+
+.finmind-form-modal .acciones {
+  margin-top: 18px;
+}
+
+.finmind-form-modal .boton-guardar {
+  --background: var(--finmind-color-primary);
+  --background-hover: var(--finmind-color-primary);
+  --background-activated: var(--finmind-color-primary);
+  --border-radius: 16px;
+  min-height: 48px;
+  font-weight: 600;
+}
