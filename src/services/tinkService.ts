@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
-import { API_BASE_URL } from './api'
+import { API_BASE_URL, extraerMensajeError } from './api'
 import { crearHeadersAutenticacion } from './httpService'
 
 const TINK_API_URL = `${API_BASE_URL}/api/banking/tink`
@@ -76,15 +76,10 @@ export const getTransactionsLoginUrl = async (
 
     if (!response.ok) {
       const errorText = await response.text()
-       console.error(`Error al obtener login-url de transacciones  ${response.status} - ${errorText}`)
-      throw new Error(
-        `No se pudo obtener la URL de autorización de transacciones. ${response.status} - ${errorText}`
-      )
+          throw new Error(extraerMensajeError(errorText, 'No se pudo obtener la URL de autorización de transacciones'))
     }
-
     return await response.json()
   } catch (error) {
-    console.error('Error al obtener login-url de transacciones:', error)
     throw error
   }
 }

@@ -4,7 +4,7 @@
       <ion-toolbar class="custom-toolbar">
         <div class="topbar">
           <div>
-            <h1 class="topbar-title">Hola, Nuria</h1>
+            <h1 class="topbar-title">Hola, {{ nombreUsuarioCabecera }}</h1>
             <p class="topbar-date">{{ fechaCabeceraFormateada }}</p>
           </div>
 
@@ -18,15 +18,21 @@
     <ion-content class="home-content">
       <div class="page-shell">
         <div class="home-wrapper">
-          <section class="account-card">
+          <section class="account-card finmind-card">
             <template v-if="!cuentaGuardada">
+              <div class="section-top">
+                <div>
+                  <p class="section-eyebrow">Banco</p>
+                  <h2 class="section-title">Conecta tu banco</h2>
+                </div>
+              </div>
+
               <div class="empty-bank-card">
                 <div class="empty-bank-icon">
                   <ion-icon :icon="cardOutline" />
                 </div>
 
                 <div class="empty-bank-text">
-                  <h2>Conecta tu banco</h2>
                   <p>
                     Vincula tu cuenta bancaria para importar tus movimientos y empezar
                     a gestionar tus gastos.
@@ -99,7 +105,7 @@
           </section>
 
           <section class="summary-grid">
-            <article class="summary-card gastos">
+            <article class="summary-card gastos finmind-card compact-card">
               <div class="summary-accent"></div>
               <p class="summary-label">Gastos del mes</p>
               <h3 class="summary-amount">{{ formatearImporte(resumenMes.gastosMes) }}</h3>
@@ -108,7 +114,7 @@
               </p>
             </article>
 
-            <article class="summary-card ingresos">
+            <article class="summary-card ingresos finmind-card compact-card">
               <div class="summary-accent"></div>
               <p class="summary-label">Ingresos del mes</p>
               <h3 class="summary-amount">{{ formatearImporte(resumenMes.ingresosMes) }}</h3>
@@ -117,7 +123,7 @@
               </p>
             </article>
 
-            <article class="summary-card balance full-width">
+            <article class="summary-card balance full-width finmind-card">
               <div class="summary-accent"></div>
               <div class="balance-top">
                 <div>
@@ -173,6 +179,7 @@ import {
 import { sincronizarMovimientosBancarios } from '@/services/transaccionService'
 import { getCuentaPrincipalPorUsuario } from '@/services/cuentaBancariaService'
 import { getResumenMesActual } from '@/services/dashboardService'
+import { obtenerUsuarioSesion } from '@/services/autenticacionService'
 
 interface CuentaGuardada {
   id: string
@@ -208,6 +215,13 @@ const resumenMes = ref<ResumenMes>({
 
 const route = useRoute()
 const router = useRouter()
+
+const nombreUsuarioCabecera = computed(() => {
+  const nombreCompleto = obtenerUsuarioSesion()?.nombre?.trim()
+  if (!nombreCompleto) return 'Nuria'
+
+  return nombreCompleto.split(' ')[0]
+})
 
 const fechaCabeceraFormateada = computed(() => {
   return new Date()
@@ -250,6 +264,60 @@ const balanceMes = computed(() => {
   return (resumenMes.value.ingresosMes || 0) - (resumenMes.value.gastosMes || 0)
 })
 
+const extraerMensajePlano = (valor: unknown, mensajePorDefecto: string): string => {
+  const textoOriginal =
+    valor instanceof Error
+      ? valor.message
+      : typeof valor === 'string'
+        ? valor
+        : ''
+
+  if (!textoOriginal || textoOriginal.trim() === '') {
+    return mensajePorDefecto
+  }
+
+  const intentarJson = (texto: string): string | null => {
+    try {
+      const parsed = JSON.parse(texto)
+      if (typeof parsed === 'string') return parsed
+
+      return parsed?.mensaje || parsed?.message || parsed?.detalle || null
+    } catch {
+      return null
+    }
+  }
+
+  const mensajeJsonDirecto = intentarJson(textoOriginal)
+  if (mensajeJsonDirecto) return mensajeJsonDirecto
+
+  const inicioJson = textoOriginal.indexOf('{')
+  const finJson = textoOriginal.lastIndexOf('}')
+  if (inicioJson !== -1 && finJson > inicioJson) {
+    const posibleJson = textoOriginal.slice(inicioJson, finJson + 1)
+    const mensajeJsonEmbebido = intentarJson(posibleJson)
+    if (mensajeJsonEmbebido) return mensajeJsonEmbebido
+  }
+
+  return textoOriginal
+}
+
+const normalizarMensajeUsuario = (valor: unknown, mensajePorDefecto: string): string => {
+  const mensaje = extraerMensajePlano(valor, mensajePorDefecto).trim()
+
+  if (mensaje === '') return mensajePorDefecto
+
+  const texto = mensaje.toLowerCase()
+
+  if (
+    texto.includes('error interno en el servidor') ||
+    texto.includes('internal server error')
+  ) {
+    return mensajePorDefecto
+  }
+
+  return mensaje
+}
+
 const mostrarToast = async (
   mensaje: string,
   color: 'success' | 'danger' | 'warning' | 'primary' = 'primary'
@@ -276,7 +344,7 @@ const cargarCuentaConectada = async () => {
   try {
     const cuenta = await getCuentaPrincipalPorUsuario()
     cuentaGuardada.value = cuenta
-  } catch (error) {
+  } catch {
     cuentaGuardada.value = null
   }
 }
@@ -285,7 +353,7 @@ const cargarResumenMes = async () => {
   try {
     const resumen = await getResumenMesActual()
     resumenMes.value = resumen
-  } catch (error) {
+  } catch {
     resumenMes.value = {
       gastosMes: 0,
       ingresosMes: 0,
@@ -317,7 +385,7 @@ const procesarRetornoBanco = async () => {
     try {
       await recargarInicio()
       await mostrarToast('Cuenta conectada correctamente.', 'success')
-    } catch (error) {
+    } catch {
       await mostrarToast(
         'La cuenta se conectó, pero no se pudo refrescar la información.',
         'warning'
@@ -332,7 +400,7 @@ const procesarRetornoBanco = async () => {
     try {
       await recargarInicio()
       await mostrarToast('Autorización de transacciones completada correctamente.', 'success')
-    } catch (error) {
+    } catch {
       await mostrarToast(
         'La autorización terminó, pero no se pudo refrescar la información.',
         'warning'
@@ -344,10 +412,10 @@ const procesarRetornoBanco = async () => {
   }
 
   if (status === 'transactions-error') {
-    const mensajeError =
-      typeof message === 'string' && message.trim() !== ''
-        ? message
-        : 'No se pudo completar la autorización de transacciones.'
+    const mensajeError = normalizarMensajeUsuario(
+      typeof message === 'string' ? message : '',
+      'No se pudo completar la autorización de transacciones.'
+    )
 
     await mostrarToast(mensajeError, 'danger')
     await router.replace('/inicio')
@@ -355,10 +423,10 @@ const procesarRetornoBanco = async () => {
   }
 
   if (status === 'error') {
-    const mensajeError =
-      typeof message === 'string' && message.trim() !== ''
-        ? message
-        : 'No se pudo completar la conexión bancaria.'
+    const mensajeError = normalizarMensajeUsuario(
+      typeof message === 'string' ? message : '',
+      'No se pudo completar la conexión bancaria.'
+    )
 
     await mostrarToast(mensajeError, 'danger')
     await router.replace('/inicio')
@@ -374,9 +442,7 @@ const conectarBanco = async () => {
     await abrirTink(loginData.loginUrl)
   } catch (error) {
     await mostrarToast(
-      error instanceof Error
-        ? error.message
-        : 'No se pudo iniciar la conexión bancaria.',
+      normalizarMensajeUsuario(error, 'No se pudo iniciar la conexión bancaria.'),
       'danger'
     )
     loading.value = false
@@ -391,9 +457,7 @@ const conectarBancoTransacciones = async () => {
     await abrirTink(loginData.loginUrl)
   } catch (error) {
     await mostrarToast(
-      error instanceof Error
-        ? error.message
-        : 'No se pudo iniciar la autorización de transacciones.',
+      normalizarMensajeUsuario(error, 'No se pudo iniciar la autorización de transacciones.'),
       'danger'
     )
   } finally {
@@ -412,13 +476,11 @@ const esErrorDeAutorizacionCaducada = (mensaje: string) => {
   )
 }
 
-const mostrarDialogoReconectar = async (mensajeServidor?: string) => {
+const mostrarDialogoReconectar = async () => {
   const alert = await alertController.create({
     header: 'Reconectar banco',
     message:
-      mensajeServidor && mensajeServidor.trim() !== ''
-        ? mensajeServidor
-        : 'La autorización para sincronizar movimientos ha caducado. Necesitas volver a autorizar el acceso a tus movimientos bancarios.',
+      'La autorización bancaria ha caducado. Necesitas volver a conectar tu banco para seguir sincronizando movimientos.',
     buttons: [
       {
         text: 'Cancelar',
@@ -451,13 +513,10 @@ const sincronizarMovimientos = async () => {
 
     await mostrarToast(mensaje, 'success')
   } catch (error) {
-    const mensaje =
-      error instanceof Error
-        ? error.message.trim()
-        : 'No se pudo sincronizar la cuenta bancaria.'
+    const mensaje = normalizarMensajeUsuario(error, 'No se pudo sincronizar la cuenta bancaria.')
 
     if (esErrorDeAutorizacionCaducada(mensaje)) {
-      await mostrarDialogoReconectar(mensaje)
+      await mostrarDialogoReconectar()
       return
     }
 
@@ -476,9 +535,7 @@ const desvincularCuenta = async () => {
     await mostrarToast('Cuenta desvinculada correctamente.', 'success')
   } catch (error) {
     await mostrarToast(
-      error instanceof Error
-        ? error.message
-        : 'No se pudo desvincular la cuenta bancaria.',
+      normalizarMensajeUsuario(error, 'No se pudo desvincular la cuenta bancaria.'),
       'danger'
     )
   } finally {
@@ -601,23 +658,48 @@ watch(
 .home-wrapper {
   width: 100%;
   max-width: 430px;
-  padding: 18px 16px 28px;
+  padding: 16px 16px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+}
+
+.finmind-card {
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
 }
 
 .account-card {
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 10px 26px rgba(35, 63, 107, 0.08);
   padding: 18px;
+}
+
+.section-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: #6f7782;
+  font-weight: 700;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #17181c;
 }
 
 .empty-bank-card {
   display: flex;
-  flex-direction: column;
   gap: 14px;
+  align-items: flex-start;
 }
 
 .empty-bank-icon,
@@ -634,7 +716,6 @@ watch(
   flex-shrink: 0;
 }
 
-.empty-bank-text h2,
 .bank-card-header h2 {
   margin: 0;
   font-size: 1.1rem;
@@ -645,19 +726,19 @@ watch(
 .empty-bank-text p {
   margin: 0;
   color: #6f7782;
-  line-height: 1.5;
-  font-size: 0.98rem;
+  line-height: 1.45;
+  font-size: 0.95rem;
 }
 
 .connect-button {
-  margin-top: 18px;
+  margin-top: 16px;
   --background: #f1b80f;
   --background-hover: #f1b80f;
   --background-activated: #f1b80f;
   --color: #17181c;
   --border-radius: 18px;
   font-weight: 700;
-  min-height: 52px;
+  min-height: 50px;
   box-shadow: 0 10px 18px rgba(241, 184, 15, 0.22);
 }
 
@@ -690,7 +771,7 @@ watch(
   --border-radius: 14px;
   --color: #233f6b;
   --border-color: #d7deea;
-  font-weight: 600;
+  font-weight: 700;
   min-height: 34px;
   flex-shrink: 0;
 }
@@ -763,11 +844,12 @@ watch(
 
 .summary-card {
   position: relative;
-  background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 10px 26px rgba(35, 63, 107, 0.08);
-  padding: 18px 16px 16px;
+  padding: 16px;
   overflow: hidden;
+}
+
+.compact-card {
+  min-height: 154px;
 }
 
 .summary-card.full-width {
@@ -795,7 +877,7 @@ watch(
 }
 
 .summary-label {
-  margin: 8px 0 10px;
+  margin: 10px 0 10px;
   font-size: 0.92rem;
   font-weight: 700;
   color: #667085;
@@ -878,6 +960,10 @@ ion-spinner {
   .balance-top {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .empty-bank-card {
+    flex-direction: column;
   }
 }
 </style>

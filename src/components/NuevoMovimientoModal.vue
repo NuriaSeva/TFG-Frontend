@@ -14,12 +14,13 @@ import {
   IonSelect,
   IonSelectOption,
   IonDatetime,
+  IonDatetimeButton,
   IonText,
   IonIcon,
   IonSpinner,
   toastController
 } from '@ionic/vue'
-import { addCircleOutline } from 'ionicons/icons'
+import { addCircleOutline, calendarOutline } from 'ionicons/icons'
 import CategoriaModal, { type CategoriaFormulario } from '@/components/CategoriaModal.vue'
 import {
   getCategorias,
@@ -87,6 +88,19 @@ const categoriasFiltradas = computed(() => {
 
 const formularioValido = computed(() => {
   return importe.value !== null && Number(importe.value) > 0 && fecha.value.trim() !== ''
+})
+
+const fechaFormateada = computed(() => {
+  if (!fecha.value) return ''
+
+  const parsed = new Date(fecha.value)
+  if (Number.isNaN(parsed.getTime())) return ''
+
+  return parsed.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
 })
 
 const cargarCategorias = async () => {
@@ -166,7 +180,7 @@ const mostrarToast = async (
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="modal-content">
+    <ion-content class="modal-content" :fullscreen="true">
       <div class="contenedor-modal">
         <ion-list lines="none" class="lista-formulario">
           <ion-item class="item-formulario">
@@ -211,13 +225,17 @@ const mostrarToast = async (
             />
           </ion-item>
 
-          <ion-item class="item-formulario">
-            <ion-datetime
-              v-model="fecha"
-              presentation="date"
-              locale="es-ES"
-            />
-          </ion-item>
+          <div class="bloque-fecha">
+            <div class="bloque-fecha__header">
+              <span class="bloque-fecha__label">Fecha</span>
+              <div class="bloque-fecha__valor">
+                <ion-icon :icon="calendarOutline" />
+                <span>{{ fechaFormateada }}</span>
+              </div>
+            </div>
+
+            <ion-datetime-button datetime="selector-fecha" class="boton-fecha" />
+          </div>
 
           <ion-item class="item-formulario">
             <ion-select
@@ -272,6 +290,17 @@ const mostrarToast = async (
         </div>
       </div>
 
+      <ion-modal keep-contents-mounted>
+        <ion-datetime
+          id="selector-fecha"
+          v-model="fecha"
+          presentation="date"
+          locale="es-ES"
+          show-default-buttons
+          :first-day-of-week="1"
+        />
+      </ion-modal>
+
       <CategoriaModal
         :abierto="mostrandoModalCategoria"
         modo="crear"
@@ -291,6 +320,87 @@ const mostrarToast = async (
 </template>
 
 <style scoped>
+.finmind-form-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 100%;
+  --max-height: 100%;
+  --border-radius: 0;
+  --box-shadow: none;
+}
+
+.modal-header ion-toolbar {
+  --background: #233f6b;
+  --color: #ffffff;
+  --min-height: 78px;
+  --padding-top: env(safe-area-inset-top);
+}
+
+.modal-content {
+  --background: #f8f7f6;
+}
+
+.contenedor-modal {
+  padding: 18px 16px 28px;
+}
+
+.lista-formulario {
+  background: transparent;
+}
+
+.item-formulario {
+  --background: #ffffff;
+  --border-radius: 16px;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(35, 63, 107, 0.06);
+}
+
+.bloque-fecha {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 20px rgba(35, 63, 107, 0.06);
+}
+
+.bloque-fecha__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.bloque-fecha__label {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.bloque-fecha__valor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #233f6b;
+}
+
+.boton-fecha {
+  justify-content: flex-start;
+}
+
+.boton-fecha::part(native) {
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #233f6b;
+  font-weight: 600;
+  padding: 12px 14px;
+}
+
 .acciones-categoria {
   display: flex;
   justify-content: flex-start;
@@ -308,5 +418,24 @@ const mostrarToast = async (
   gap: 10px;
   align-items: center;
   padding: 8px 0 6px;
+}
+
+.texto-ayuda {
+  display: block;
+  margin: 4px 4px 0;
+  font-size: 0.9rem;
+}
+
+.acciones {
+  margin-top: 18px;
+}
+
+.boton-guardar {
+  --background: #233f6b;
+  --background-hover: #233f6b;
+  --background-activated: #233f6b;
+  --border-radius: 16px;
+  min-height: 48px;
+  font-weight: 600;
 }
 </style>

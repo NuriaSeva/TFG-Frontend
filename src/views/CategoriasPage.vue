@@ -201,6 +201,39 @@ const textoEstado = (categoria: Categoria) => {
   return categoria.tipo === 1 ? 'Ingreso' : 'Gasto'
 }
 
+const obtenerNombreIcono = (icono?: string | null) => {
+  return icono && icono.trim().length > 0 ? icono : 'pricetag-outline'
+}
+
+const obtenerFondoIcono = (categoria: Categoria) => {
+  const color = categoria.color?.trim()
+
+  if (!color) {
+    return categoria.tipo === 1 ? 'rgba(35, 63, 107, 0.12)' : 'rgba(241, 184, 15, 0.18)'
+  }
+
+  if (color.startsWith('#')) {
+    let hex = color.slice(1)
+
+    if (hex.length === 3) {
+      hex = hex
+        .split('')
+        .map((char) => char + char)
+        .join('')
+    }
+
+    if (hex.length === 6) {
+      const r = parseInt(hex.slice(0, 2), 16)
+      const g = parseInt(hex.slice(2, 4), 16)
+      const b = parseInt(hex.slice(4, 6), 16)
+
+      return `rgba(${r}, ${g}, ${b}, 0.16)`
+    }
+  }
+
+  return 'rgba(35, 63, 107, 0.12)'
+}
+
 const setFiltroTipo = (valor: 'todas' | 'gastos' | 'ingresos') => {
   filtroTipo.value = valor
 }
@@ -338,11 +371,14 @@ const mostrarToast = async (
                 class="category-item"
               >
                 <div class="category-left">
-                  <div class="category-icon" :class="categoria.tipo === 1 ? 'income' : 'expense'">
-                    <span
-                      class="color-dot"
-                      :style="{ backgroundColor: categoria.color || '#233f6b' }"
-                    />
+                  <div
+                    class="category-icon"
+                    :style="{
+                      backgroundColor: obtenerFondoIcono(categoria),
+                      color: categoria.color || '#233f6b'
+                    }"
+                  >
+                    <ion-icon :name="obtenerNombreIcono(categoria.icono)" />
                   </div>
 
                   <div class="category-text">
@@ -392,11 +428,11 @@ const mostrarToast = async (
 
 <style scoped>
 .categories-wrapper {
-  gap: 14px;
+  gap: 12px;
 }
 
 .categories-card {
-  padding: 0 16px;
+  padding: 0 16px 16px;
 }
 
 .topbar {
@@ -467,11 +503,11 @@ const mostrarToast = async (
 .summary-chip {
   display: inline-flex;
   align-items: center;
-  padding: 10px 14px;
+  padding: 9px 13px;
   border-radius: 999px;
   background: #eef1f5;
   color: #233f6b;
-  font-size: 0.9rem;
+  font-size: 0.87rem;
   font-weight: 700;
 }
 
@@ -504,7 +540,7 @@ const mostrarToast = async (
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 16px 0;
+  padding: 18px 0;
   border-bottom: 1px solid #ece8e6;
 }
 
@@ -515,34 +551,21 @@ const mostrarToast = async (
 .category-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   min-width: 0;
 }
 
 .category-icon {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.category-icon.income {
-  background: rgba(147, 169, 194, 0.24);
-}
-
-.category-icon.expense {
-  background: rgba(241, 184, 15, 0.18);
-}
-
-.color-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.62);
+  font-size: 1.18rem;
+  box-shadow: inset 0 0 0 1px rgba(35, 63, 107, 0.05);
 }
 
 .category-text {
@@ -555,6 +578,7 @@ const mostrarToast = async (
   font-size: 1rem;
   font-weight: 800;
   color: #17181c;
+  line-height: 1.25;
 }
 
 .category-meta {
@@ -584,7 +608,7 @@ const mostrarToast = async (
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -597,7 +621,7 @@ const mostrarToast = async (
   gap: 6px;
   font-size: 0.84rem;
   font-weight: 700;
-  padding: 0;
+  padding: 2px 0;
 }
 
 .edit-category-button {

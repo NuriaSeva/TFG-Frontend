@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core'
 import { Directory, Filesystem } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
-import { API_BASE_URL } from './api'
+import { API_BASE_URL, extraerMensajeError } from './api'
 import { crearHeadersAutenticacion } from './httpService'
 
 const TRANSACCIONES_API_URL = `${API_BASE_URL}/api/transacciones`
@@ -102,10 +102,9 @@ export const getTransaccionesPorUsuario = async ({
       headers: crearHeadersAutenticacion()
     }
   )
-
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudieron obtener las transacciones. ${errorText}`)
+    throw new Error(extraerMensajeError(errorText, 'No se pudieron obtener las transacciones.'))
   }
 
   return await response.json()
@@ -318,7 +317,7 @@ export const sincronizarMovimientosBancarios = async (
 
   if (!response.ok) {
     const errorText = (await response.text()).trim()
-    throw new Error(errorText || 'No se pudo sincronizar la cuenta bancaria.')
+    throw new Error(extraerMensajeError(errorText, 'No se pudieron obtener las transacciones.'))
   }
 
   return await response.json()
