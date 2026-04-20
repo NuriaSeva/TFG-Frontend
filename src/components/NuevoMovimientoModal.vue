@@ -27,6 +27,10 @@ import {
   crearCategoria,
   type Categoria
 } from '@/services/categoriaService'
+import {
+  sugerirCategoriaIA,
+  type SugerenciaCategoriaIAResponse
+} from '@/services/transaccionService'
 
 export interface MovimientoFormulario {
   categoriaId?: string | null
@@ -57,17 +61,31 @@ const moneda = ref<string>('EUR')
 const categorias = ref<Categoria[]>([])
 const cargandoCategorias = ref(false)
 
+const sugerenciaIA = ref<SugerenciaCategoriaIAResponse | null>(null)
+const cargandoSugerenciaIA = ref(false)
+const errorSugerenciaIA = ref<string | null>(null)
+let sugerenciaDebounceId: number | null = null
+let sugerenciaRequestId = 0
+
 const mostrandoModalCategoria = ref(false)
+
+const obtenerFechaPorDefecto = () => new Date().toISOString()
+
+const aplicarMovimientoInicial = (value?: MovimientoFormulario | null) => {
+  categoriaId.value = value?.categoriaId ?? null
+  importe.value = value?.importe ?? null
+  tipo.value = value?.tipo ?? 2
+  fecha.value = value?.fecha ?? obtenerFechaPorDefecto()
+  descripcion.value = value?.descripcion ?? ''
+  moneda.value = value?.moneda ?? 'EUR'
+}
 
 watch(
   () => props.movimientoInicial,
   value => {
-    categoriaId.value = value?.categoriaId ?? null
-    importe.value = value?.importe ?? null
-    tipo.value = value?.tipo ?? 2
-    fecha.value = value?.fecha ?? new Date().toISOString()
-    descripcion.value = value?.descripcion ?? ''
-    moneda.value = value?.moneda ?? 'EUR'
+    if (props.abierto) {
+      aplicarMovimientoInicial(value)
+    }
   },
   { immediate: true }
 )
@@ -76,8 +94,21 @@ watch(
   () => props.abierto,
   async abierto => {
     if (abierto) {
+      aplicarMovimientoInicial(props.movimientoInicial)
       await cargarCategorias()
+      programarSugerenciaIA()
+      return
     }
+
+    if (sugerenciaDebounceId !== null) {
+      window.clearTimeout(sugerenciaDebounceId)
+      sugerenciaDebounceId = null
+    }
+
+    sugerenciaRequestId++
+    limpiarSugerenciaIA()
+    mostrandoModalCategoria.value = false
+    aplicarMovimientoInicial(null)
   },
   { immediate: true }
 )
@@ -88,6 +119,18 @@ const categoriasFiltradas = computed(() => {
 
 const formularioValido = computed(() => {
   return importe.value !== null && Number(importe.value) > 0 && fecha.value.trim() !== ''
+})
+
+const puedeSugerirIA = computed(() => {
+  return (
+    props.abierto &&
+    categoriaId.value == null &&
+    descripcion.value.trim().length >= 3
+  )
+})
+
+const confianzaSugeridaPorcentaje = computed(() => {
+  return Math.round((sugerenciaIA.value?.mejorSugerencia?.confianza ?? 0) * 100)
 })
 
 const fechaFormateada = computed(() => {
@@ -115,6 +158,67 @@ const cargarCategorias = async () => {
   }
 }
 
+const limpiarSugerenciaIA = () => {
+  sugerenciaIA.value = null
+  errorSugerenciaIA.value = null
+  cargandoSugerenciaIA.value = false
+}
+
+const solicitarSugerenciaIA = async () => {
+  if (!puedeSugerirIA.value) {
+    limpiarSugerenciaIA()
+    return
+  }
+
+  const requestId = ++sugerenciaRequestId
+  cargandoSugerenciaIA.value = true
+  errorSugerenciaIA.value = null
+
+  try {
+    const respuesta = await sugerirCategoriaIA({
+      descripcion: descripcion.value.trim(),
+      importe: Number(importe.value ?? 0),
+      tipo: tipo.value
+    })
+
+    if (requestId !== sugerenciaRequestId) return
+    sugerenciaIA.value = respuesta
+  } catch (error: any) {
+    if (requestId !== sugerenciaRequestId) return
+    sugerenciaIA.value = null
+    errorSugerenciaIA.value =
+      error?.message || 'No se pudo obtener una sugerencia de categoría en este momento.'
+  } finally {
+    if (requestId === sugerenciaRequestId) {
+      cargandoSugerenciaIA.value = false
+    }
+  }
+}
+
+const programarSugerenciaIA = () => {
+  if (sugerenciaDebounceId !== null) {
+    window.clearTimeout(sugerenciaDebounceId)
+    sugerenciaDebounceId = null
+  }
+
+  if (!puedeSugerirIA.value) {
+    limpiarSugerenciaIA()
+    return
+  }
+
+  sugerenciaDebounceId = window.setTimeout(() => {
+    void solicitarSugerenciaIA()
+  }, 450)
+}
+
+const aplicarSugerenciaIA = async () => {
+  const sugerida = sugerenciaIA.value?.mejorSugerencia
+  if (!sugerida?.categoriaId) return
+
+  categoriaId.value = sugerida.categoriaId
+  await mostrarToast(`Sugerencia aplicada: ${sugerida.categoriaNombre}.`)
+}
+
 const cerrar = () => {
   emit('cerrar')
 }
@@ -131,6 +235,14 @@ const guardar = () => {
     moneda: moneda.value.trim() || 'EUR'
   })
 }
+
+watch(
+  [descripcion, tipo, categoriaId, () => props.abierto],
+  () => {
+    programarSugerenciaIA()
+  },
+  { immediate: true }
+)
 
 const abrirNuevaCategoria = () => {
   mostrandoModalCategoria.value = true
@@ -267,6 +379,51 @@ const mostrarToast = async (
               Nueva categoría
             </ion-button>
           </div>
+
+          <div v-if="cargandoSugerenciaIA" class="sugerencia-ia sugerencia-ia--neutral">
+            <ion-spinner name="crescent" />
+            <ion-text>Analizando descripción para sugerir categoría...</ion-text>
+          </div>
+
+          <div
+            v-else-if="sugerenciaIA?.mejorSugerencia"
+            class="sugerencia-ia"
+            :class="sugerenciaIA.requiereConfirmacion ? 'sugerencia-ia--warning' : 'sugerencia-ia--success'"
+          >
+            <ion-text>
+              <strong>Sugerencia IA: {{ sugerenciaIA.mejorSugerencia.categoriaNombre }}</strong>
+            </ion-text>
+
+            <ion-text>
+              Confianza estimada: {{ confianzaSugeridaPorcentaje }}%
+            </ion-text>
+
+            <ion-text v-if="sugerenciaIA.requiereConfirmacion">
+              Confianza menor al 70%. Puedes aplicarla manualmente si te encaja.
+            </ion-text>
+
+            <ion-text v-else>
+              Confianza alta. Si dejas "Sin categoría", se aplicará automáticamente al guardar.
+            </ion-text>
+
+            <ion-button
+              fill="outline"
+              size="small"
+              class="boton-aplicar-sugerencia"
+              :disabled="!sugerenciaIA.mejorSugerencia.categoriaId"
+              @click="aplicarSugerenciaIA"
+            >
+              Usar sugerencia
+            </ion-button>
+          </div>
+
+          <ion-text
+            v-else-if="errorSugerenciaIA && descripcion.trim().length >= 3 && categoriaId == null"
+            color="medium"
+            class="texto-ayuda"
+          >
+            {{ errorSugerenciaIA }}
+          </ion-text>
         </ion-list>
 
         <div v-if="cargandoCategorias" class="estado-carga">
@@ -410,6 +567,39 @@ const mostrarToast = async (
 .boton-nueva-categoria {
   --color: #233f6b;
   font-weight: 600;
+}
+
+.sugerencia-ia {
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sugerencia-ia ion-text {
+  font-size: 0.86rem;
+}
+
+.sugerencia-ia--neutral {
+  background: #eef2f7;
+}
+
+.sugerencia-ia--warning {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.sugerencia-ia--success {
+  background: #edf7f1;
+  border: 1px solid #b8e2ca;
+}
+
+.boton-aplicar-sugerencia {
+  align-self: flex-start;
+  --color: #233f6b;
+  --border-color: #233f6b;
 }
 
 .estado-carga {

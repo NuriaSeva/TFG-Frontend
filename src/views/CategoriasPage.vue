@@ -9,6 +9,12 @@ import {
   IonContent,
   IonButton,
   IonIcon,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonCard,
+  IonCardContent,
+  IonChip,
   IonText,
   IonSpinner,
   IonButtons,
@@ -20,7 +26,49 @@ import {
   createOutline,
   archiveOutline,
   refreshOutline,
-  fileTrayOutline
+  fileTrayOutline,
+  pricetagOutline,
+  walletOutline,
+  filmOutline,
+  shirtOutline,
+  heartOutline,
+  homeOutline,
+  carOutline,
+  busOutline,
+  trainOutline,
+  cartOutline,
+  medicalOutline,
+  giftOutline,
+  airplaneOutline,
+  schoolOutline,
+  footballOutline,
+  gameControllerOutline,
+  cashOutline,
+  briefcaseOutline,
+  fitnessOutline,
+  cafeOutline,
+  restaurantOutline,
+  colorWandOutline,
+  phonePortraitOutline,
+  laptopOutline,
+  bookOutline,
+  musicalNotesOutline,
+  pawOutline,
+  cardOutline,
+  bagHandleOutline,
+  basketOutline,
+  libraryOutline,
+  bedOutline,
+  buildOutline,
+  diamondOutline,
+  flowerOutline,
+  hardwareChipOutline,
+  leafOutline,
+  newspaperOutline,
+  nutritionOutline,
+  rocketOutline,
+  storefrontOutline,
+  trophyOutline
 } from 'ionicons/icons'
 import CategoriaModal, { type CategoriaFormulario } from '@/components/CategoriaModal.vue'
 import {
@@ -41,6 +89,51 @@ const categoriaInicial = ref<CategoriaFormulario | null>(null)
 
 const filtroTipo = ref<'todas' | 'gastos' | 'ingresos'>('todas')
 const filtroArchivado = ref<'activas' | 'archivadas'>('activas')
+
+const iconosMap: Record<string, string> = {
+  'pricetag-outline': pricetagOutline,
+  'wallet-outline': walletOutline,
+  'film-outline': filmOutline,
+  'shirt-outline': shirtOutline,
+  'heart-outline': heartOutline,
+  'home-outline': homeOutline,
+  'car-outline': carOutline,
+  'bus-outline': busOutline,
+  'train-outline': trainOutline,
+  'cart-outline': cartOutline,
+  'medical-outline': medicalOutline,
+  'gift-outline': giftOutline,
+  'airplane-outline': airplaneOutline,
+  'school-outline': schoolOutline,
+  'football-outline': footballOutline,
+  'game-controller-outline': gameControllerOutline,
+  'cash-outline': cashOutline,
+  'briefcase-outline': briefcaseOutline,
+  'fitness-outline': fitnessOutline,
+  'cafe-outline': cafeOutline,
+  'restaurant-outline': restaurantOutline,
+  'color-wand-outline': colorWandOutline,
+  'phone-portrait-outline': phonePortraitOutline,
+  'laptop-outline': laptopOutline,
+  'book-outline': bookOutline,
+  'musical-notes-outline': musicalNotesOutline,
+  'paw-outline': pawOutline,
+  'card-outline': cardOutline,
+  'bag-handle-outline': bagHandleOutline,
+  'basket-outline': basketOutline,
+  'library-outline': libraryOutline,
+  'bed-outline': bedOutline,
+  'build-outline': buildOutline,
+  'diamond-outline': diamondOutline,
+  'flower-outline': flowerOutline,
+  'hardware-chip-outline': hardwareChipOutline,
+  'leaf-outline': leafOutline,
+  'newspaper-outline': newspaperOutline,
+  'nutrition-outline': nutritionOutline,
+  'rocket-outline': rocketOutline,
+  'storefront-outline': storefrontOutline,
+  'trophy-outline': trophyOutline
+}
 
 const cargarCategorias = async () => {
   cargando.value = true
@@ -78,29 +171,6 @@ const categoriasFiltradas = computed(() => {
 
 const totalActivas = computed(() => categorias.value.filter(c => !c.archivada).length)
 const totalArchivadas = computed(() => categorias.value.filter(c => c.archivada).length)
-
-const subtituloActual = computed(() => {
-  if (filtroArchivado.value === 'archivadas') {
-    return 'Categorías archivadas'
-  }
-
-  return 'Categorías activas'
-})
-
-const textoResumen = computed(() => {
-  const total = categoriasFiltradas.value.length
-  const bloque = filtroArchivado.value === 'archivadas' ? 'archivadas' : 'activas'
-
-  if (filtroTipo.value === 'gastos') {
-    return `${total} categoría${total === 1 ? '' : 's'} de gasto ${bloque}`
-  }
-
-  if (filtroTipo.value === 'ingresos') {
-    return `${total} categoría${total === 1 ? '' : 's'} de ingreso ${bloque}`
-  }
-
-  return `${total} categoría${total === 1 ? '' : 's'} ${bloque}`
-})
 
 const abrirCrearCategoria = () => {
   modoModal.value = 'crear'
@@ -201,45 +271,22 @@ const textoEstado = (categoria: Categoria) => {
   return categoria.tipo === 1 ? 'Ingreso' : 'Gasto'
 }
 
-const obtenerNombreIcono = (icono?: string | null) => {
-  return icono && icono.trim().length > 0 ? icono : 'pricetag-outline'
+const normalizarColor = (color?: string | null) => {
+  if (!color) return '#233f6b'
+  const valor = color.trim()
+  return valor.startsWith('#') ? valor : `#${valor}`
 }
 
-const obtenerFondoIcono = (categoria: Categoria) => {
-  const color = categoria.color?.trim()
+const resolverIcono = (icono?: string | null) => {
+  if (!icono) return pricetagOutline
 
-  if (!color) {
-    return categoria.tipo === 1 ? 'rgba(35, 63, 107, 0.12)' : 'rgba(241, 184, 15, 0.18)'
-  }
-
-  if (color.startsWith('#')) {
-    let hex = color.slice(1)
-
-    if (hex.length === 3) {
-      hex = hex
-        .split('')
-        .map((char) => char + char)
-        .join('')
-    }
-
-    if (hex.length === 6) {
-      const r = parseInt(hex.slice(0, 2), 16)
-      const g = parseInt(hex.slice(2, 4), 16)
-      const b = parseInt(hex.slice(4, 6), 16)
-
-      return `rgba(${r}, ${g}, ${b}, 0.16)`
-    }
-  }
-
-  return 'rgba(35, 63, 107, 0.12)'
+  const clave = icono.trim().toLowerCase()
+  return iconosMap[clave] ?? pricetagOutline
 }
 
-const setFiltroTipo = (valor: 'todas' | 'gastos' | 'ingresos') => {
-  filtroTipo.value = valor
-}
-
-const setFiltroArchivado = (valor: 'activas' | 'archivadas') => {
-  filtroArchivado.value = valor
+const fondoIcono = (categoria: Categoria) => {
+  const color = normalizarColor(categoria.color)
+  return `linear-gradient(0deg, rgba(255,255,255,0.78), rgba(255,255,255,0.78)), ${color}`
 }
 
 const mostrarToast = async (
@@ -259,160 +306,134 @@ const mostrarToast = async (
 
 <template>
   <ion-page>
-    <ion-header class="ion-no-border">
-      <ion-toolbar class="custom-toolbar">
-        <div class="topbar">
-          <div>
-            <h1 class="topbar-title">Categorías</h1>
-            <p class="topbar-subtitle">{{ subtituloActual }}</p>
-          </div>
-
-          <button class="refresh-button" type="button" @click="refrescar" aria-label="Actualizar">
+    <ion-header translucent>
+      <ion-toolbar class="toolbar-principal">
+        <ion-title>Categorías</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="refrescar">
             <ion-icon :icon="refreshOutline" />
-          </button>
-        </div>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="categories-content">
-      <div class="page-shell">
-        <div class="categories-wrapper">
-          <section class="filters-card">
-            <div class="filters-header-row">
-              <div>
-                <h2 class="section-title">Gestiona tus categorías</h2>
-              </div>
+    <ion-content class="pagina-categorias">
+      <div class="cabecera-resumen">
+        <div>
+          <h2>Gestiona tus categorías</h2>
+          <p>Organiza ingresos y gastos de forma sencilla.</p>
+        </div>
 
-              <ion-button class="create-button" @click="abrirCrearCategoria">
-                <ion-icon slot="start" :icon="addOutline" />
-                Nueva
+        <ion-button class="boton-crear" @click="abrirCrearCategoria">
+          <ion-icon slot="start" :icon="addOutline" />
+          Nueva
+        </ion-button>
+      </div>
+
+      <div class="chips-resumen">
+        <ion-chip class="chip-resumen">
+          <ion-label>Activas: {{ totalActivas }}</ion-label>
+        </ion-chip>
+        <ion-chip class="chip-resumen chip-secundario">
+          <ion-label>Archivadas: {{ totalArchivadas }}</ion-label>
+        </ion-chip>
+      </div>
+
+      <div class="bloque-filtros">
+        <ion-segment v-model="filtroTipo" class="segmento-tipo">
+          <ion-segment-button value="todas">
+            <ion-label>Todas</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="gastos">
+            <ion-label>Gastos</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="ingresos">
+            <ion-label>Ingresos</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+
+        <ion-segment v-model="filtroArchivado" class="segmento-archivado">
+          <ion-segment-button value="activas">
+            <ion-label>Activas</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="archivadas">
+            <ion-label>Archivadas</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <div v-if="cargando" class="estado-carga">
+        <ion-spinner name="crescent" />
+        <ion-text color="medium">Cargando categorías...</ion-text>
+      </div>
+
+      <div v-else-if="categoriasFiltradas.length === 0" class="estado-vacio">
+        <ion-icon :icon="fileTrayOutline" />
+        <h3>No hay categorías para mostrar</h3>
+        <p>
+          {{
+            filtroArchivado === 'archivadas'
+              ? 'Todavía no tienes categorías archivadas con este filtro.'
+              : 'Crea tu primera categoría personalizada para empezar.'
+          }}
+        </p>
+      </div>
+
+      <div v-else class="listado-categorias">
+        <ion-card
+          v-for="categoria in categoriasFiltradas"
+          :key="categoria.id"
+          class="tarjeta-categoria"
+        >
+          <ion-card-content>
+            <div class="fila-superior">
+              <div class="info-categoria">
+                <div class="titulo-linea">
+                  <div class="icono-categoria" :style="{ background: fondoIcono(categoria) }">
+                    <ion-icon
+                      class="simbolo-categoria"
+                      :icon="resolverIcono(categoria.icono)"
+                      :style="{ color: normalizarColor(categoria.color) }"
+                    />
+                  </div>
+                  <h3>{{ categoria.nombre }}</h3>
+                </div>
+
+                <div class="chips-linea">
+                  <ion-chip class="chip-tipo">
+                    <ion-label>{{ textoEstado(categoria) }}</ion-label>
+                  </ion-chip>
+
+                  <ion-chip v-if="categoria.esSistema" class="chip-sistema">
+                    <ion-label>Sistema</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+            </div>
+
+            <div class="acciones-categoria">
+              <ion-button
+                fill="outline"
+                size="small"
+                class="boton-secundario"
+                @click="abrirEditarCategoria(categoria)"
+              >
+                <ion-icon slot="start" :icon="createOutline" />
+                Editar
+              </ion-button>
+
+              <ion-button
+                fill="clear"
+                size="small"
+                class="boton-archivar"
+                @click="onCambiarArchivado(categoria, !categoria.archivada)"
+              >
+                <ion-icon slot="start" :icon="archiveOutline" />
+                {{ categoria.archivada ? 'Desarchivar' : 'Archivar' }}
               </ion-button>
             </div>
-
-            <div class="summary-chips">
-              <span class="summary-chip">Activas: {{ totalActivas }}</span>
-              <span class="summary-chip secondary">Archivadas: {{ totalArchivadas }}</span>
-            </div>
-
-            <div class="filter-block">
-              <label class="filter-label">Tipo</label>
-              <div class="chips-row">
-                <button
-                  class="filter-chip"
-                  :class="{ active: filtroTipo === 'todas' }"
-                  @click="setFiltroTipo('todas')"
-                >
-                  Todas
-                </button>
-                <button
-                  class="filter-chip"
-                  :class="{ active: filtroTipo === 'gastos' }"
-                  @click="setFiltroTipo('gastos')"
-                >
-                  Gastos
-                </button>
-                <button
-                  class="filter-chip"
-                  :class="{ active: filtroTipo === 'ingresos' }"
-                  @click="setFiltroTipo('ingresos')"
-                >
-                  Ingresos
-                </button>
-              </div>
-            </div>
-
-            <div class="filter-block filter-block-last">
-              <label class="filter-label">Estado</label>
-              <div class="chips-row">
-                <button
-                  class="filter-chip"
-                  :class="{ active: filtroArchivado === 'activas' }"
-                  @click="setFiltroArchivado('activas')"
-                >
-                  Activas
-                </button>
-                <button
-                  class="filter-chip"
-                  :class="{ active: filtroArchivado === 'archivadas' }"
-                  @click="setFiltroArchivado('archivadas')"
-                >
-                  Archivadas
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section v-if="!cargando" class="summary-strip">
-            <p>{{ textoResumen }}</p>
-          </section>
-
-          <section class="categories-section">
-            <div v-if="cargando" class="loading-state">
-              <ion-spinner name="crescent" />
-              <p>Cargando categorías...</p>
-            </div>
-
-            <div v-else-if="categoriasFiltradas.length === 0" class="empty-state">
-              <ion-icon :icon="fileTrayOutline" />
-              <h4>No hay categorías</h4>
-              <p>
-                {{
-                  filtroArchivado === 'archivadas'
-                    ? 'No hay categorías archivadas con este filtro.'
-                    : 'Crea tu primera categoría personalizada para empezar.'
-                }}
-              </p>
-            </div>
-
-            <div v-else class="categories-card">
-              <div
-                v-for="categoria in categoriasFiltradas"
-                :key="categoria.id"
-                class="category-item"
-              >
-                <div class="category-left">
-                  <div
-                    class="category-icon"
-                    :style="{
-                      backgroundColor: obtenerFondoIcono(categoria),
-                      color: categoria.color || '#233f6b'
-                    }"
-                  >
-                    <ion-icon :name="obtenerNombreIcono(categoria.icono)" />
-                  </div>
-
-                  <div class="category-text">
-                    <h4>{{ categoria.nombre }}</h4>
-                    <div class="category-meta">
-                      <span class="category-tag">{{ textoEstado(categoria) }}</span>
-                      <span v-if="categoria.esSistema" class="category-tag system">Sistema</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="category-right">
-                  <button
-                    class="edit-category-button"
-                    type="button"
-                    @click="abrirEditarCategoria(categoria)"
-                  >
-                    <ion-icon :icon="createOutline" />
-                    <span>Editar</span>
-                  </button>
-
-                  <button
-                    class="archive-category-button"
-                    type="button"
-                    @click="onCambiarArchivado(categoria, !categoria.archivada)"
-                  >
-                    <ion-icon :icon="archiveOutline" />
-                    <span>{{ categoria.archivada ? 'Desarchivar' : 'Archivar' }}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
+          </ion-card-content>
+        </ion-card>
       </div>
 
       <CategoriaModal
@@ -427,231 +448,186 @@ const mostrarToast = async (
 </template>
 
 <style scoped>
-.categories-wrapper {
-  gap: 12px;
+.toolbar-principal {
+  --background: #233f6b;
+  --color: #ffffff;
 }
 
-.categories-card {
-  padding: 0 16px 16px;
+.pagina-categorias {
+  --background: #f2f0ef;
 }
 
-.topbar {
+.cabecera-resumen {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 14px 18px 18px;
+  gap: 14px;
+  padding: 18px 16px 8px;
 }
 
-.topbar-title {
+.cabecera-resumen h2 {
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.15;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1d2b44;
 }
 
-.topbar-subtitle {
+.cabecera-resumen p {
   margin: 6px 0 0;
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: #667085;
+  font-size: 0.95rem;
 }
 
-.refresh-button {
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.05rem;
-}
-
-.filters-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 1.08rem;
-  color: #17181c;
-  font-weight: 800;
-}
-
-.create-button {
+.boton-crear {
   --background: #f1b80f;
   --background-hover: #f1b80f;
   --background-activated: #f1b80f;
-  --color: #17181c;
-  --border-radius: 16px;
-  font-weight: 800;
-  text-transform: none;
-}
-
-.summary-chips {
-  margin-top: 14px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.summary-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 9px 13px;
-  border-radius: 999px;
-  background: #eef1f5;
-  color: #233f6b;
-  font-size: 0.87rem;
+  --color: #1b1b1f;
+  --border-radius: 14px;
   font-weight: 700;
 }
 
-.summary-chip.secondary {
-  background: #f7efcf;
+.chips-resumen {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 10px;
+  flex-wrap: wrap;
+}
+
+.chip-resumen {
+  --background: #e9eef6;
+  color: #233f6b;
+  font-weight: 600;
+}
+
+.chip-secundario {
+  --background: #f5edd1;
   color: #8a6500;
 }
 
-.filter-block {
-  margin-top: 16px;
+.bloque-filtros {
+  padding: 0 16px 10px;
 }
 
-.filter-block-last {
-  margin-top: 14px;
+.segmento-tipo,
+.segmento-archivado {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 4px;
+  margin-bottom: 10px;
 }
 
-.categories-section {
+.estado-carga,
+.estado-vacio {
+  padding: 40px 20px;
+  text-align: center;
+  color: #667085;
+}
+
+.estado-carga {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  align-items: center;
 }
 
-.empty-state ion-icon {
+.estado-vacio ion-icon {
   font-size: 2rem;
+  margin-bottom: 10px;
   color: #98a2b3;
 }
 
-.category-item {
+.estado-vacio h3 {
+  margin: 0 0 8px;
+  color: #233f6b;
+}
+
+.estado-vacio p {
+  margin: 0;
+}
+
+.listado-categorias {
+  padding: 4px 16px 24px;
+}
+
+.tarjeta-categoria {
+  margin: 0 0 14px;
+  border-radius: 20px;
+  box-shadow: 0 10px 24px rgba(35, 63, 107, 0.08);
+}
+
+.fila-superior {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  padding: 18px 0;
-  border-bottom: 1px solid #ece8e6;
+  gap: 12px;
 }
 
-.category-item:last-child {
-  border-bottom: none;
-}
-
-.category-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.info-categoria {
   flex: 1;
   min-width: 0;
 }
 
-.category-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+.titulo-linea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.titulo-linea h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #233f6b;
+}
+
+.icono-categoria {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 1.18rem;
-  box-shadow: inset 0 0 0 1px rgba(35, 63, 107, 0.05);
+  border: 1px solid rgba(35, 63, 107, 0.06);
 }
 
-.category-text {
-  flex: 1;
-  min-width: 0;
+.simbolo-categoria {
+  font-size: 1.15rem;
 }
 
-.category-text h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #17181c;
-  line-height: 1.25;
-}
-
-.category-meta {
-  margin-top: 7px;
+.chips-linea {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 10px;
 }
 
-.category-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #edf2fa;
+.chip-tipo {
+  --background: #edf2fa;
   color: #233f6b;
-  font-size: 0.78rem;
-  font-weight: 700;
 }
 
-.category-tag.system {
-  background: #fef3c7;
+.chip-sistema {
+  --background: #fef3c7;
   color: #8a6500;
 }
 
-.category-right {
+.acciones-categoria {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
 
-.edit-category-button,
-.archive-category-button {
-  border: none;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.84rem;
-  font-weight: 700;
-  padding: 2px 0;
+.boton-secundario {
+  --color: #233f6b;
+  --border-color: #233f6b;
+  --border-radius: 14px;
 }
 
-.edit-category-button {
-  color: #233f6b;
-}
-
-.archive-category-button {
-  color: #6f7782;
-}
-
-@media (max-width: 380px) {
-  .filters-header-row {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .create-button {
-    width: 100%;
-  }
-
-  .category-item {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .category-right {
-    width: 100%;
-    flex-direction: row;
-    justify-content: flex-end;
-    gap: 14px;
-  }
+.boton-archivar {
+  --color: #667085;
 }
 </style>

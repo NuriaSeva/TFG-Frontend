@@ -254,7 +254,8 @@ import {
   IonSelectOption,
   IonSpinner,
   IonToast,
-  IonToolbar
+  IonToolbar,
+  alertController
 } from '@ionic/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import {
@@ -271,12 +272,17 @@ import {
   shareSocialOutline
 } from 'ionicons/icons'
 import {
+  actualizarMovimiento,
+  crearMovimientoManual,
   exportarTransaccionesCsv,
   getTransaccionesPorUsuario,
+  sugerirCategoriaIA,
   type ModoExportacionCsv,
   type TransaccionListadoResponse
 } from '@/services/transaccionService'
-import NuevoMovimientoModal from '@/components/NuevoMovimientoModal.vue'
+import NuevoMovimientoModal, {
+  type MovimientoFormulario
+} from '@/components/NuevoMovimientoModal.vue'
 
 const hoy = new Date()
 const mesActual = hoy.getMonth() + 1
@@ -328,8 +334,141 @@ const cerrarNuevoMovimiento = () => {
   movimientoSeleccionado.value = null
 }
 
-const onMovimientoGuardado = async () => {
-  await cargarTransacciones(true)
+const construirPayloadActualizacion = (
+  transaccion: TransaccionListadoResponse,
+  formulario: MovimientoFormulario,
+  categoriaId: string | null
+) => {
+  return {
+    id: transaccion.id,
+    cuentaBancariaId: transaccion.cuentaBancariaId ?? null,
+    categoriaId,
+    importe: Number(formulario.importe ?? 0),
+    moneda: formulario.moneda?.trim() || 'EUR',
+    tipo: formulario.tipo,
+    origen: transaccion.origen,
+    proveedor: transaccion.proveedor,
+    fecha: formulario.fecha,
+    descripcion: formulario.descripcion?.trim() || null,
+    idTransaccionExterna: transaccion.idTransaccionExterna ?? null
+  }
+}
+
+const aplicarSugerenciaConConfirmacion = async (
+  transaccionCreada: TransaccionListadoResponse,
+  formulario: MovimientoFormulario
+) => {
+  if (formulario.categoriaId != null || transaccionCreada.categoriaId != null) {
+    return
+  }
+
+  try {
+    const sugerencia = await sugerirCategoriaIA({
+      descripcion: transaccionCreada.descripcion ?? 'Movimiento manual',
+      importe: transaccionCreada.importe,
+      tipo: transaccionCreada.tipo
+    })
+
+    const mejorSugerencia = sugerencia.mejorSugerencia
+
+    if (!sugerencia.requiereConfirmacion || !mejorSugerencia?.categoriaId) {
+      return
+    }
+
+    const confianzaPorcentaje = Math.round((mejorSugerencia.confianza ?? 0) * 100)
+
+    const alerta = await alertController.create({
+      header: 'Sugerencia de categoría',
+      message: `La IA sugiere <strong>${mejorSugerencia.categoriaNombre}</strong> (${confianzaPorcentaje}% de confianza). ¿Quieres aplicarla?`,
+      buttons: [
+        {
+          text: 'Mantener sin categoría',
+          role: 'cancel'
+        },
+        {
+          text: 'Aplicar sugerencia',
+          handler: () => {
+            void (async () => {
+              try {
+                await actualizarMovimiento(
+                  construirPayloadActualizacion(
+                    transaccionCreada,
+                    formulario,
+                    mejorSugerencia.categoriaId
+                  )
+                )
+
+                await cargarTransacciones(true)
+                mostrarToast(
+                  `Categoría sugerida aplicada: ${mejorSugerencia.categoriaNombre}.`,
+                  'success'
+                )
+              } catch (error) {
+                console.error(error)
+                mostrarToast(
+                  error instanceof Error
+                    ? error.message
+                    : 'No se pudo aplicar la categoría sugerida.',
+                  'danger'
+                )
+              }
+            })()
+          }
+        }
+      ]
+    })
+
+    await alerta.present()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const onMovimientoGuardado = async (formulario: MovimientoFormulario) => {
+  try {
+    const isEdicion = movimientoSeleccionado.value != null
+
+    if (isEdicion && movimientoSeleccionado.value) {
+      await actualizarMovimiento(
+        construirPayloadActualizacion(
+          movimientoSeleccionado.value,
+          formulario,
+          formulario.categoriaId ?? null
+        )
+      )
+
+      mostrarToast('Movimiento actualizado correctamente.', 'success')
+      cerrarNuevoMovimiento()
+      await cargarTransacciones(true)
+      return
+    }
+
+    const transaccionCreada = await crearMovimientoManual({
+      categoriaId: formulario.categoriaId ?? null,
+      importe: Number(formulario.importe ?? 0),
+      tipo: formulario.tipo,
+      fecha: formulario.fecha,
+      descripcion: formulario.descripcion?.trim() || null,
+      moneda: formulario.moneda?.trim() || 'EUR'
+    })
+
+    cerrarNuevoMovimiento()
+    await cargarTransacciones(true)
+
+    if (transaccionCreada.categoriaId != null) {
+      mostrarToast('Movimiento creado y categorizado automáticamente.', 'success')
+      return
+    }
+
+    mostrarToast('Movimiento creado sin categoría automática.', 'warning')
+    await aplicarSugerenciaConConfirmacion(transaccionCreada, formulario)
+  } catch (e) {
+    console.error(e)
+    mostrarToast(
+      e instanceof Error ? e.message : 'No se pudo guardar el movimiento.',
+      'danger'
+    )
+  }
 }
 
 const aniosDisponibles = computed(() => [anioActual, anioActual - 1, anioActual - 2])

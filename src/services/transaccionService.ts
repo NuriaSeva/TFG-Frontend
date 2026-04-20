@@ -5,6 +5,7 @@ import { API_BASE_URL, extraerMensajeError } from './api'
 import { crearHeadersAutenticacion } from './httpService'
 
 const TRANSACCIONES_API_URL = `${API_BASE_URL}/api/transacciones`
+const IA_API_URL = `${API_BASE_URL}/api/ia`
 
 export interface TransaccionListadoResponse {
   id: string
@@ -54,6 +55,29 @@ export interface ResultadoSincronizacionResponse {
   nuevas: number
   ignoradas: number
   mensaje?: string
+}
+
+export interface SugerenciaCategoriaIARequest {
+  descripcion: string
+  importe: number
+  tipo: number
+  usuarioId?: string | null
+}
+
+export interface CategoriaSugeridaIAResponse {
+  categoriaId: string | null
+  categoriaNombre: string
+  confianza: number
+  fuente: string
+}
+
+export interface SugerenciaCategoriaIAResponse {
+  mejorSugerencia: CategoriaSugeridaIAResponse | null
+  alternativas: CategoriaSugeridaIAResponse[]
+  confianza: number
+  fuente: string
+  requiereConfirmacion: boolean
+  umbralAutoasignacion: number
 }
 
 const construirQueryParams = ({
@@ -273,6 +297,25 @@ export const crearMovimientoManual = async (payload: CrearMovimientoManualReques
   if (!response.ok) {
     const errorText = await response.text()
     throw new Error(`No se pudo crear el movimiento. ${errorText}`)
+  }
+
+  return await response.json()
+}
+
+export const sugerirCategoriaIA = async (
+  payload: SugerenciaCategoriaIARequest
+): Promise<SugerenciaCategoriaIAResponse> => {
+  const response = await fetch(`${IA_API_URL}/sugerir-categoria`, {
+    method: 'POST',
+    headers: crearHeadersAutenticacion(true),
+    body: JSON.stringify(payload)
+  })
+
+  if (!response.ok) {
+    const errorText = (await response.text()).trim()
+    throw new Error(
+      extraerMensajeError(errorText, 'No se pudo obtener una sugerencia de categoría.')
+    )
   }
 
   return await response.json()
