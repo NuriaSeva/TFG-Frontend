@@ -7,7 +7,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonButton,
   IonIcon,
   IonSpinner,
   IonText,
@@ -439,9 +438,14 @@ const heatmapOptions = computed<any>(() => {
             <p class="topbar-subtitle">Gráficos y comparativas de tus finanzas</p>
           </div>
 
-          <ion-button fill="clear" class="refresh-button" @click="cargarDatos" aria-label="Actualizar visualizaciones">
+          <button
+            type="button"
+            class="profile-button"
+            @click="cargarDatos"
+            aria-label="Actualizar visualizaciones"
+          >
             <ion-icon :icon="refreshOutline" />
-          </ion-button>
+          </button>
         </div>
       </ion-toolbar>
     </ion-header>
@@ -562,40 +566,7 @@ const heatmapOptions = computed<any>(() => {
 
 <style scoped>
 .visualizaciones-content {
-  --background: #f2f0ef;
-}
-
-.custom-toolbar {
-  --background: #233f6b;
-  --min-height: 104px;
-  display: flex;
-  align-items: flex-end;
-}
-
-.topbar {
-  width: 100%;
-  padding: 20px 18px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.topbar-title {
-  margin: 0;
-  color: #ffffff;
-  font-size: 1.7rem;
-  font-weight: 700;
-}
-
-.topbar-subtitle {
-  margin: 6px 0 0;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.92rem;
-}
-
-.refresh-button {
-  --color: #ffffff;
+  --background: var(--finmind-color-page);
 }
 
 .page-shell {

@@ -91,7 +91,7 @@
                 </ion-button>
               </div>
 
-              <div class="bank-card-body">
+              <div class="bank-card-body compact">
                 <p class="bank-summary-bank">
                   {{ cuentaGuardada.banco || 'Banco no disponible' }}
                 </p>
@@ -162,7 +162,7 @@
             </article>
           </section>
 
-          <section class="alerts-card finmind-card">
+          <section v-if="alertasActivasInicio" class="alerts-card finmind-card">
             <div class="alerts-header">
               <div>
                 <p class="section-eyebrow">Avisos</p>
@@ -290,6 +290,7 @@ import {
   marcarTodasAlertasLeidas,
   type AlertaResponse
 } from '@/services/alertaService'
+import { getConfiguracionUsuario } from '@/services/configuracionUsuarioService'
 import { obtenerUsuarioSesion } from '@/services/autenticacionService'
 
 interface CuentaGuardada {
@@ -329,6 +330,7 @@ const historialAlertas = ref<AlertaResponse[]>([])
 const mostrandoCentroAlertas = ref(false)
 const cargandoCentroAlertas = ref(false)
 const totalAlertasNoLeidas = ref(0)
+const alertasActivasInicio = ref(true)
 let peticionesInicioActivas = 0
 const primeraCargaInicioCompletada = ref(false)
 
@@ -483,6 +485,11 @@ const cargarResumenMes = async () => {
 }
 
 const cargarAlertasProactivas = async () => {
+  if (!alertasActivasInicio.value) {
+    alertasProactivas.value = []
+    return
+  }
+
   try {
     await getVisualizaciones()
     const response = await getAlertas(1, 12)
@@ -506,10 +513,24 @@ const badgeNotificaciones = computed(() => {
 })
 
 const cargarNoLeidas = async () => {
+  if (!alertasActivasInicio.value) {
+    totalAlertasNoLeidas.value = 0
+    return
+  }
+
   try {
     totalAlertasNoLeidas.value = await getAlertasNoLeidasTotal()
   } catch {
     totalAlertasNoLeidas.value = 0
+  }
+}
+
+const cargarConfiguracionAlertas = async () => {
+  try {
+    const configuracion = await getConfiguracionUsuario()
+    alertasActivasInicio.value = configuracion.notificacionesActivas
+  } catch {
+    alertasActivasInicio.value = true
   }
 }
 
@@ -537,7 +558,7 @@ const marcarHistoricoComoLeido = async () => {
     historialAlertas.value = historialAlertas.value.map(a => ({ ...a, leida: true }))
     totalAlertasNoLeidas.value = 0
   } catch {
-    await mostrarToast('No se pudieron marcar como leídas.', 'warning')
+    await mostrarToast('No hemos podido marcar los avisos como leídos.', 'warning')
   }
 }
 
@@ -583,6 +604,8 @@ const recargarInicio = async () => {
   }
 
   try {
+    await cargarConfiguracionAlertas()
+
     await Promise.all([
       cargarCuentaConectada(),
       cargarResumenMes(),
@@ -644,7 +667,7 @@ const procesarRetornoBanco = async () => {
   if (status === 'transactions-error') {
     const mensajeError = normalizarMensajeUsuario(
       typeof message === 'string' ? message : '',
-      'No se pudo completar la autorización de transacciones.'
+      'No hemos podido completar la autorización de movimientos.'
     )
 
     await mostrarToast(mensajeError, 'danger')
@@ -655,7 +678,7 @@ const procesarRetornoBanco = async () => {
   if (status === 'error') {
     const mensajeError = normalizarMensajeUsuario(
       typeof message === 'string' ? message : '',
-      'No se pudo completar la conexión bancaria.'
+      'No hemos podido completar la conexión bancaria.'
     )
 
     await mostrarToast(mensajeError, 'danger')
@@ -672,7 +695,7 @@ const conectarBanco = async () => {
     await abrirTink(loginData.loginUrl)
   } catch (error) {
     await mostrarToast(
-      normalizarMensajeUsuario(error, 'No se pudo iniciar la conexión bancaria.'),
+      normalizarMensajeUsuario(error, 'No hemos podido iniciar la conexión bancaria.'),
       'danger'
     )
     loading.value = false
@@ -687,7 +710,7 @@ const conectarBancoTransacciones = async () => {
     await abrirTink(loginData.loginUrl)
   } catch (error) {
     await mostrarToast(
-      normalizarMensajeUsuario(error, 'No se pudo iniciar la autorización de transacciones.'),
+      normalizarMensajeUsuario(error, 'No hemos podido iniciar la autorización de movimientos.'),
       'danger'
     )
   } finally {
@@ -743,7 +766,7 @@ const sincronizarMovimientos = async () => {
 
     await mostrarToast(mensaje, 'success')
   } catch (error) {
-    const mensaje = normalizarMensajeUsuario(error, 'No se pudo sincronizar la cuenta bancaria.')
+    const mensaje = normalizarMensajeUsuario(error, 'No hemos podido sincronizar la cuenta bancaria.')
 
     if (esErrorDeAutorizacionCaducada(mensaje)) {
       await mostrarDialogoReconectar()
@@ -765,7 +788,7 @@ const desvincularCuenta = async () => {
     await mostrarToast('Cuenta desvinculada correctamente.', 'success')
   } catch (error) {
     await mostrarToast(
-      normalizarMensajeUsuario(error, 'No se pudo desvincular la cuenta bancaria.'),
+      normalizarMensajeUsuario(error, 'No hemos podido desvincular la cuenta bancaria.'),
       'danger'
     )
   } finally {
@@ -837,45 +860,6 @@ watch(
 </script>
 
 <style scoped>
-.custom-toolbar {
-  --background: #233f6b;
-  --color: #ffffff;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px 16px;
-}
-
-.topbar-title {
-  margin: 0;
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.topbar-date {
-  margin: 4px 0 0;
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.profile-button {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-}
-
 .notifications-badge {
   position: absolute;
   top: -4px;
@@ -883,7 +867,7 @@ watch(
   min-width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: #b42318;
+  background: #cf3f3f;
   color: #ffffff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -894,7 +878,7 @@ watch(
 }
 
 .home-content {
-  --background: #f2f0ef;
+  --background: #efefef;
 }
 
 .page-shell {
@@ -906,10 +890,10 @@ watch(
 .home-wrapper {
   width: 100%;
   max-width: 430px;
-  padding: 16px 16px 28px;
+  padding: 12px 14px 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .home-loading-state {
@@ -923,26 +907,28 @@ watch(
 
 .home-loading-state h2 {
   margin: 0;
-  color: #233f6b;
+  color: #223353;
   font-size: 1.06rem;
   font-weight: 800;
 }
 
 .home-loading-state p {
   margin: 0;
-  color: #6f7782;
+  color: #5f6f83;
   font-size: 0.9rem;
   line-height: 1.35;
 }
 
 .finmind-card {
   background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 8px 22px rgba(35, 63, 107, 0.08);
+  border-radius: 16px;
+  border: 1px solid #dfe5ed;
+  box-shadow: 0 8px 16px rgba(36, 58, 94, 0.06);
 }
 
 .account-card {
-  padding: 18px;
+  padding: 12px;
+  background: #ffffff;
 }
 
 .section-top {
@@ -956,7 +942,7 @@ watch(
 .section-eyebrow {
   margin: 0 0 4px;
   font-size: 0.8rem;
-  color: #6f7782;
+  color: #5f6f83;
   font-weight: 700;
 }
 
@@ -964,7 +950,7 @@ watch(
   margin: 0;
   font-size: 1.12rem;
   font-weight: 700;
-  color: #17181c;
+  color: #181d27;
 }
 
 .empty-bank-card {
@@ -975,11 +961,11 @@ watch(
 
 .empty-bank-icon,
 .bank-summary-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  background: #edf2fa;
-  color: #233f6b;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: #ecf2fb;
+  color: #223353;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -989,28 +975,28 @@ watch(
 
 .bank-card-header h2 {
   margin: 0;
-  font-size: 1.1rem;
-  color: #17181c;
+  font-size: 1rem;
+  color: #181d27;
   font-weight: 700;
 }
 
 .empty-bank-text p {
   margin: 0;
-  color: #6f7782;
+  color: #5f6f83;
   line-height: 1.45;
   font-size: 0.95rem;
 }
 
 .connect-button {
   margin-top: 16px;
-  --background: #f1b80f;
-  --background-hover: #f1b80f;
-  --background-activated: #f1b80f;
-  --color: #17181c;
-  --border-radius: 18px;
-  font-weight: 700;
+  --background: linear-gradient(135deg, #e6b21d 0%, #f2c647 100%);
+  --background-hover: linear-gradient(135deg, #e6b21d 0%, #f2c647 100%);
+  --background-activated: linear-gradient(135deg, #e6b21d 0%, #f2c647 100%);
+  --color: #181d27;
+  --border-radius: 16px;
+  font-weight: 800;
   min-height: 50px;
-  box-shadow: 0 10px 18px rgba(241, 184, 15, 0.22);
+  box-shadow: 0 10px 16px rgba(230, 178, 29, 0.28);
 }
 
 .bank-card-header {
@@ -1032,64 +1018,67 @@ watch(
 }
 
 .bank-summary-label {
-  margin: 0 0 4px;
-  font-size: 0.8rem;
-  color: #6f7782;
+  margin: 0 0 2px;
+  font-size: 0.72rem;
+  color: #5f6f83;
   font-weight: 600;
 }
 
 .sync-mini-button {
-  --border-radius: 14px;
-  --color: #233f6b;
-  --border-color: #d7deea;
+  --border-radius: 10px;
+  --color: #223353;
+  --border-color: #bfc9d6;
+  --background: #f7f9fc;
   font-weight: 700;
-  min-height: 34px;
+  min-height: 32px;
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
   flex-shrink: 0;
 }
 
 .bank-card-body {
-  margin-top: 14px;
+  margin-top: 8px;
 }
 
 .bank-summary-bank {
   margin: 0;
-  color: #233f6b;
-  font-size: 0.95rem;
+  color: #223353;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .bank-summary-iban {
-  margin: 6px 0 0;
-  color: #6f7782;
-  font-size: 0.9rem;
+  margin: 4px 0 0;
+  color: #5f6f83;
+  font-size: 0.82rem;
   word-break: break-word;
 }
 
 .sync-line.compact {
-  margin-top: 14px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #ece8e6;
+  padding-top: 8px;
+  border-top: 1px solid #e3e7ee;
 }
 
 .sync-line-label {
-  font-size: 0.84rem;
-  color: #6f7782;
+  font-size: 0.76rem;
+  color: #5f6f83;
   font-weight: 600;
 }
 
 .sync-line-value {
-  font-size: 0.9rem;
-  color: #17181c;
+  font-size: 0.8rem;
+  color: #181d27;
   font-weight: 600;
   text-align: right;
 }
 
 .account-actions.compact {
-  margin-top: 8px;
+  margin-top: 4px;
   display: flex;
   justify-content: flex-start;
 }
@@ -1098,9 +1087,9 @@ watch(
   border: none;
   background: transparent;
   color: #b42318;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 6px 0 0;
+  padding: 2px 0 0;
 }
 
 .unlink-button:disabled {
@@ -1110,17 +1099,18 @@ watch(
 .summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 10px;
 }
 
 .summary-card {
   position: relative;
-  padding: 16px;
+  padding: 12px;
   overflow: hidden;
+  border-radius: 14px;
 }
 
 .compact-card {
-  min-height: 154px;
+  min-height: 118px;
 }
 
 .summary-card.full-width {
@@ -1131,16 +1121,28 @@ watch(
   position: absolute;
   inset: 0 auto auto 0;
   width: 100%;
-  height: 5px;
-  background: #233f6b;
+  height: 3px;
+  background: #8fa3b8;
 }
 
 .summary-card.ingresos .summary-accent {
-  background: #f1b80f;
+  background: #f2b705;
 }
 
 .summary-card.gastos .summary-accent {
-  background: #233f6b;
+  background: #8fa3b8;
+}
+
+.summary-card.gastos {
+  background: #fafafa;
+}
+
+.summary-card.ingresos {
+  background: #fafafa;
+}
+
+.summary-card.balance {
+  background: #fafafa;
 }
 
 .summary-card.balance .summary-accent {
@@ -1148,33 +1150,33 @@ watch(
 }
 
 .summary-label {
-  margin: 10px 0 10px;
-  font-size: 0.92rem;
+  margin: 6px 0 6px;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #667085;
+  color: #5f6f83;
 }
 
 .summary-amount {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1.1;
-  color: #17181c;
+  color: #181d27;
 }
 
 .summary-meta {
-  margin: 10px 0 0;
-  font-size: 0.83rem;
-  color: #7a8088;
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  color: #6d7a8d;
   line-height: 1.4;
 }
 
 .summary-card.gastos .summary-amount {
-  color: #233f6b;
+  color: #223353;
 }
 
 .summary-card.ingresos .summary-amount {
-  color: #8a6500;
+  color: #906f10;
 }
 
 .balance-top {
@@ -1186,19 +1188,19 @@ watch(
 
 .balance-badge {
   border-radius: 999px;
-  padding: 7px 12px;
-  font-size: 0.78rem;
+  padding: 5px 10px;
+  font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .balance-badge.positivo {
-  background: rgba(6, 118, 71, 0.12);
+  background: rgba(6, 118, 71, 0.14);
   color: #067647;
 }
 
 .balance-badge.negativo {
-  background: rgba(180, 35, 24, 0.12);
+  background: rgba(180, 35, 24, 0.14);
   color: #b42318;
 }
 
@@ -1211,11 +1213,12 @@ watch(
 }
 
 .balance-meta {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .alerts-card {
-  padding: 16px;
+  padding: 12px;
+  background: #ffffff;
 }
 
 .alerts-header {
@@ -1223,14 +1226,14 @@ watch(
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .alerts-empty {
   display: flex;
   gap: 10px;
   align-items: center;
-  color: #6f7782;
+  color: #5f6f83;
   font-size: 0.9rem;
 }
 
@@ -1241,12 +1244,12 @@ watch(
 .alerts-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .alert-item {
-  border-radius: 14px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 9px 10px;
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -1259,29 +1262,29 @@ watch(
 
 .alert-item h3 {
   margin: 0;
-  font-size: 0.93rem;
+  font-size: 0.86rem;
   font-weight: 700;
 }
 
 .alert-item p {
   margin: 4px 0 0;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   line-height: 1.35;
 }
 
 .alert-alta {
-  background: #fef2f2;
-  color: #991b1b;
+  background: #fdf0f0;
+  color: #932727;
 }
 
 .alert-media {
-  background: #fff7ed;
-  color: #9a3412;
+  background: #fff8eb;
+  color: #9a4f0e;
 }
 
 .alert-baja {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #eff5ff;
+  color: #294f9f;
 }
 
 .alerts-modal-header {
@@ -1293,7 +1296,7 @@ watch(
 }
 
 .alerts-modal-toolbar {
-  --background: #233f6b;
+  --background: linear-gradient(160deg, #223353 0%, #1a2437 100%);
   --min-height: 86px;
 }
 
@@ -1330,14 +1333,14 @@ watch(
 }
 
 .alerts-modal-content {
-  --background: #f2f0ef;
+  --background: #efefef;
 }
 
 .alerts-modal-loading,
 .alerts-modal-empty {
   padding: 28px 16px;
   text-align: center;
-  color: #6f7782;
+  color: #5f6f83;
 }
 
 .alerts-modal-list {
@@ -1351,8 +1354,8 @@ watch(
   --inner-padding-end: 12px;
   border-radius: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 10px 22px rgba(35, 63, 107, 0.08);
-  border-left: 4px solid #98a2b3;
+  box-shadow: 0 10px 20px rgba(26, 36, 55, 0.08);
+  border-left: 4px solid #91a0b3;
 }
 
 .alerts-modal-item-top {
@@ -1373,7 +1376,7 @@ watch(
   margin: 0;
   font-size: 0.94rem;
   font-weight: 700;
-  color: #17181c;
+  color: #181d27;
 }
 
 .alerts-type-chip {
@@ -1381,21 +1384,21 @@ watch(
   padding: 3px 8px;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #475467;
-  background: #eef2f7;
+  color: #4f6075;
+  background: #edf2f8;
   white-space: nowrap;
 }
 
 .alerts-modal-date {
   font-size: 0.72rem;
-  color: #667085;
+  color: #6d7a8d;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .alerts-modal-message {
   margin: 8px 0 0;
-  color: #475467;
+  color: #4f6075;
   line-height: 1.4;
   font-size: 0.85rem;
 }
@@ -1404,15 +1407,15 @@ watch(
   display: inline-block;
   margin-top: 10px;
   border-radius: 999px;
-  background: rgba(35, 63, 107, 0.12);
-  color: #233f6b;
+  background: rgba(34, 51, 83, 0.12);
+  color: #223353;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 4px 9px;
 }
 
 .alerts-modal-item.is-unread {
-  box-shadow: 0 12px 24px rgba(35, 63, 107, 0.12);
+  box-shadow: 0 12px 24px rgba(34, 51, 83, 0.14);
 }
 
 .alerts-modal-item.alerta-prediccion {

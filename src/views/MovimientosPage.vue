@@ -463,18 +463,16 @@ const aplicarSugerenciaConConfirmacion = async (
       return
     }
 
-    const confianzaPorcentaje = Math.round((mejorSugerencia.confianza ?? 0) * 100)
-
     const alerta = await alertController.create({
-      header: 'Sugerencia de categoría',
-      message: `La IA sugiere <strong>${mejorSugerencia.categoriaNombre}</strong> (${confianzaPorcentaje}% de confianza). ¿Quieres aplicarla?`,
+      header: 'Categoría recomendada',
+      message: `Este movimiento puede encajar en <strong>${mejorSugerencia.categoriaNombre}</strong>. ¿Quieres asignarla?`,
       buttons: [
         {
-          text: 'Mantener sin categoría',
+          text: 'Ahora no',
           role: 'cancel'
         },
         {
-          text: 'Aplicar sugerencia',
+          text: 'Asignar categoría',
           handler: () => {
             void (async () => {
               try {
@@ -488,7 +486,7 @@ const aplicarSugerenciaConConfirmacion = async (
 
                 await cargarTransacciones(true)
                 mostrarToast(
-                  `Categoría sugerida aplicada: ${mejorSugerencia.categoriaNombre}.`,
+                  `Categoría asignada: ${mejorSugerencia.categoriaNombre}.`,
                   'success'
                 )
               } catch (error) {
@@ -496,7 +494,7 @@ const aplicarSugerenciaConConfirmacion = async (
                 mostrarToast(
                   error instanceof Error
                     ? error.message
-                    : 'No se pudo aplicar la categoría sugerida.',
+                    : 'No hemos podido asignar la categoría recomendada.',
                   'danger'
                 )
               }
@@ -565,7 +563,7 @@ const onMovimientoGuardado = async (formulario: MovimientoFormulario) => {
   } catch (e) {
     console.error(e)
     mostrarToast(
-      e instanceof Error ? e.message : 'No se pudo guardar el movimiento.',
+      e instanceof Error ? e.message : 'No hemos podido guardar el movimiento.',
       'danger'
     )
   }
@@ -745,7 +743,7 @@ const exportarCsv = async (exportarTodo: boolean, modo: ModoExportacionCsv) => {
   } catch (e) {
     console.error(e)
     mostrarToast(
-      e instanceof Error ? e.message : 'No se pudieron exportar los movimientos.',
+      e instanceof Error ? e.message : 'No hemos podido exportar los movimientos.',
       'danger'
     )
   } finally {
@@ -784,7 +782,7 @@ const cargarTransacciones = async (reset = false) => {
   } catch (e) {
     console.error(e)
     error.value =
-      e instanceof Error ? e.message : 'No se pudieron cargar los movimientos.'
+      e instanceof Error ? e.message : 'No hemos podido cargar los movimientos.'
   } finally {
     loading.value = false
   }
@@ -882,54 +880,6 @@ onMounted(async () => {
   padding: 0 16px;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px 18px;
-}
-
-.topbar-kicker {
-  margin: 0 0 4px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.78);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.topbar-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.15;
-}
-
-.topbar-subtitle {
-  margin: 6px 0 0;
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.92);
-  text-transform: capitalize;
-}
-
-.profile-button {
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-}
-
-.profile-button:disabled {
-  opacity: 0.72;
-}
-
 .filters-header {
   margin-bottom: 14px;
 }
@@ -958,6 +908,16 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.chips-row {
+  margin-top: 12px;
+}
+
+.filter-chip {
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-size: 0.88rem;
 }
 
 .movements-section {

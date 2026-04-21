@@ -86,7 +86,7 @@ export const registrarUsuario = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(extraerMensajeError(errorText, 'No se pudo completar el registro.'))
+    throw new Error(extraerMensajeError(errorText, 'No hemos podido completar el registro.'))
   }
 
   return await response.json()
@@ -106,7 +106,7 @@ export const iniciarSesion = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(extraerMensajeError(errorText, 'No se pudo iniciar sesión.'))
+    throw new Error(extraerMensajeError(errorText, 'No hemos podido iniciar sesión.'))
   }
 
   return await response.json()
@@ -132,7 +132,7 @@ export const cambiarPassword = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(extraerMensajeError(errorText, 'No se pudo cambiar la contraseña.'))
+    throw new Error(extraerMensajeError(errorText, 'No hemos podido cambiar la contraseña.'))
   }
 }
 
@@ -230,3 +230,4 @@ const extraerMensajeError = (errorText: string, mensajePorDefecto: string): stri
     return errorText
   }
 }
+

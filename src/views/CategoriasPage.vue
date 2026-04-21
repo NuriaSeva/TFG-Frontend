@@ -5,19 +5,15 @@ import {
   IonPage,
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonContent,
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
   IonLabel,
   IonCard,
   IonCardContent,
   IonChip,
   IonText,
   IonSpinner,
-  IonButtons,
   alertController,
   toastController
 } from '@ionic/vue'
@@ -169,9 +165,6 @@ const categoriasFiltradas = computed(() => {
   })
 })
 
-const totalActivas = computed(() => categorias.value.filter(c => !c.archivada).length)
-const totalArchivadas = computed(() => categorias.value.filter(c => c.archivada).length)
-
 const abrirCrearCategoria = () => {
   modoModal.value = 'crear'
   categoriaEditando.value = null
@@ -214,6 +207,7 @@ const onGuardarCategoria = async (formulario: CategoriaFormulario) => {
     } else if (categoriaEditando.value) {
       await actualizarCategoria({
         id: categoriaEditando.value.id,
+        usuarioId: categoriaEditando.value.usuarioId ?? null,
         ...formulario
       })
       await mostrarToast('Categoría actualizada correctamente.')
@@ -306,61 +300,82 @@ const mostrarToast = async (
 
 <template>
   <ion-page>
-    <ion-header translucent>
-      <ion-toolbar class="toolbar-principal">
-        <ion-title>Categorías</ion-title>
-        <ion-buttons slot="end">
-          <ion-button @click="refrescar">
+    <ion-header class="ion-no-border">
+      <ion-toolbar class="custom-toolbar">
+        <div class="topbar">
+          <div>
+            <h1 class="topbar-title">Categorías</h1>
+            <p class="topbar-subtitle">Gestiona ingresos y gastos</p>
+          </div>
+
+          <button
+            class="profile-button"
+            type="button"
+            @click="refrescar"
+            aria-label="Actualizar categorías"
+          >
             <ion-icon :icon="refreshOutline" />
-          </ion-button>
-        </ion-buttons>
+          </button>
+        </div>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="pagina-categorias">
-      <div class="cabecera-resumen">
-        <div>
-          <h2>Gestiona tus categorías</h2>
-          <p>Organiza ingresos y gastos de forma sencilla.</p>
+    <ion-content class="categories-content">
+      <section class="filters-card">
+        <div class="categories-actions-row">
+          <button class="create-category-button" type="button" @click="abrirCrearCategoria">
+            <ion-icon :icon="addOutline" />
+            <span>Nueva categoría</span>
+          </button>
         </div>
 
-        <ion-button class="boton-crear" @click="abrirCrearCategoria">
-          <ion-icon slot="start" :icon="addOutline" />
-          Nueva
-        </ion-button>
-      </div>
+        <div class="filter-block">
+          <p class="filter-block-label">Tipo</p>
+          <div class="chips-row">
+            <button
+              class="filter-chip"
+              :class="{ active: filtroTipo === 'todas' }"
+              @click="filtroTipo = 'todas'"
+            >
+              Todas
+            </button>
+            <button
+              class="filter-chip"
+              :class="{ active: filtroTipo === 'gastos' }"
+              @click="filtroTipo = 'gastos'"
+            >
+              Gastos
+            </button>
+            <button
+              class="filter-chip"
+              :class="{ active: filtroTipo === 'ingresos' }"
+              @click="filtroTipo = 'ingresos'"
+            >
+              Ingresos
+            </button>
+          </div>
+        </div>
 
-      <div class="chips-resumen">
-        <ion-chip class="chip-resumen">
-          <ion-label>Activas: {{ totalActivas }}</ion-label>
-        </ion-chip>
-        <ion-chip class="chip-resumen chip-secundario">
-          <ion-label>Archivadas: {{ totalArchivadas }}</ion-label>
-        </ion-chip>
-      </div>
-
-      <div class="bloque-filtros">
-        <ion-segment v-model="filtroTipo" class="segmento-tipo">
-          <ion-segment-button value="todas">
-            <ion-label>Todas</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="gastos">
-            <ion-label>Gastos</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="ingresos">
-            <ion-label>Ingresos</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-
-        <ion-segment v-model="filtroArchivado" class="segmento-archivado">
-          <ion-segment-button value="activas">
-            <ion-label>Activas</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="archivadas">
-            <ion-label>Archivadas</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-      </div>
+        <div class="filter-block">
+          <p class="filter-block-label">Estado</p>
+          <div class="chips-row">
+            <button
+              class="filter-chip"
+              :class="{ active: filtroArchivado === 'activas' }"
+              @click="filtroArchivado = 'activas'"
+            >
+              Activas
+            </button>
+            <button
+              class="filter-chip"
+              :class="{ active: filtroArchivado === 'archivadas' }"
+              @click="filtroArchivado = 'archivadas'"
+            >
+              Archivadas
+            </button>
+          </div>
+        </div>
+      </section>
 
       <div v-if="cargando" class="estado-carga">
         <ion-spinner name="crescent" />
@@ -448,73 +463,73 @@ const mostrarToast = async (
 </template>
 
 <style scoped>
-.toolbar-principal {
-  --background: #233f6b;
-  --color: #ffffff;
+
+.filters-card {
+  margin: 14px 16px 10px;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(35, 63, 107, 0.08);
 }
 
-.pagina-categorias {
-  --background: #f2f0ef;
-}
-
-.cabecera-resumen {
+.categories-actions-row {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 18px 16px 8px;
+  justify-content: flex-end;
+  margin-bottom: 10px;
 }
 
-.cabecera-resumen h2 {
-  margin: 0;
-  font-size: 1.35rem;
+.create-category-button {
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e6b21d 0%, #f2c647 100%);
+  color: #181d27;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 8px 16px rgba(230, 178, 29, 0.26);
+}
+
+.create-category-button ion-icon {
+  font-size: 1rem;
+}
+
+.filter-block + .filter-block {
+  margin-top: 12px;
+}
+
+.filter-block-label {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6f7782;
   font-weight: 700;
-  color: #1d2b44;
 }
 
-.cabecera-resumen p {
-  margin: 6px 0 0;
-  color: #667085;
-  font-size: 0.95rem;
-}
-
-.boton-crear {
-  --background: #f1b80f;
-  --background-hover: #f1b80f;
-  --background-activated: #f1b80f;
-  --color: #1b1b1f;
-  --border-radius: 14px;
-  font-weight: 700;
-}
-
-.chips-resumen {
+.chips-row {
   display: flex;
-  gap: 10px;
-  padding: 0 16px 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.chip-resumen {
-  --background: #e9eef6;
+.filter-chip {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: #edf1f6;
   color: #233f6b;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
-.chip-secundario {
-  --background: #f5edd1;
-  color: #8a6500;
-}
-
-.bloque-filtros {
-  padding: 0 16px 10px;
-}
-
-.segmento-tipo,
-.segmento-archivado {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 4px;
-  margin-bottom: 10px;
+.filter-chip.active {
+  background: #f1b80f;
+  color: #17181c;
 }
 
 .estado-carga,

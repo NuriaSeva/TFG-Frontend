@@ -130,7 +130,7 @@ export const getTransaccionesPorUsuario = async ({
   )
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(extraerMensajeError(errorText, 'No se pudieron obtener las transacciones.'))
+    throw new Error(extraerMensajeError(errorText, 'No hemos podido cargar tus movimientos.'))
   }
 
   return await response.json()
@@ -251,7 +251,7 @@ export const exportarTransaccionesCsv = async (
 
   if (!response.ok) {
     const errorText = (await response.text()).trim()
-    throw new Error(errorText || 'No se pudieron exportar los movimientos.')
+    throw new Error(errorText || 'No hemos podido exportar los movimientos.')
   }
 
   if (Capacitor.isNativePlatform()) {
@@ -298,7 +298,7 @@ export const crearMovimientoManual = async (payload: CrearMovimientoManualReques
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo crear el movimiento. ${errorText}`)
+    throw new Error(`No hemos podido guardar el movimiento. ${errorText}`)
   }
 
   return await response.json()
@@ -316,7 +316,7 @@ export const sugerirCategoriaIA = async (
   if (!response.ok) {
     const errorText = (await response.text()).trim()
     throw new Error(
-      extraerMensajeError(errorText, 'No se pudo obtener una sugerencia de categoría.')
+      extraerMensajeError(errorText, 'Ahora mismo no podemos recomendar una categoría.')
     )
   }
 
@@ -332,7 +332,7 @@ export const actualizarMovimiento = async (payload: ActualizarMovimientoRequest)
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo actualizar el movimiento. ${errorText}`)
+    throw new Error(`No hemos podido actualizar el movimiento. ${errorText}`)
   }
 
   if (response.status === 204) return
@@ -355,7 +355,7 @@ export const actualizarCategoriaTransaccionImportada = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo actualizar la categoría del movimiento importado. ${errorText}`)
+    throw new Error(`No hemos podido actualizar la categoría del movimiento. ${errorText}`)
   }
 
   if (response.status === 204) return
@@ -372,7 +372,7 @@ export const eliminarMovimiento = async (id: string) => {
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo eliminar el movimiento. ${errorText}`)
+    throw new Error(`No hemos podido eliminar el movimiento. ${errorText}`)
   }
 }
 
@@ -385,7 +385,7 @@ export const sincronizarMovimientosBancarios = async (
 
   if (!response.ok) {
     const errorText = (await response.text()).trim()
-    throw new Error(extraerMensajeError(errorText, 'No se pudieron obtener las transacciones.'))
+    throw new Error(extraerMensajeError(errorText, 'No hemos podido sincronizar tus movimientos.'))
   }
 
   return await response.json()

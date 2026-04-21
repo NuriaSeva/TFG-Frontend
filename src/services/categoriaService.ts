@@ -26,6 +26,7 @@ export interface CrearCategoriaRequest {
 
 export interface ActualizarCategoriaRequest {
   id: string
+  usuarioId?: string | null
   nombre: string
   tipo: number
   color?: string | null
@@ -42,7 +43,7 @@ export const getCategorias = async (): Promise<Categoria[]> => {
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudieron obtener las categorías. ${errorText}`)
+    throw new Error(`No hemos podido cargar tus categorías. ${errorText}`)
   }
 
   const data = await response.json()
@@ -58,7 +59,7 @@ export const crearCategoria = async (payload: CrearCategoriaRequest): Promise<Ca
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo crear la categoría. ${errorText}`)
+    throw new Error(`No hemos podido crear la categoría. ${errorText}`)
   }
 
   return await response.json()
@@ -73,7 +74,7 @@ export const actualizarCategoria = async (payload: ActualizarCategoriaRequest) =
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo actualizar la categoría. ${errorText}`)
+    throw new Error(`No hemos podido actualizar la categoría. ${errorText}`)
   }
 
   if (response.status === 204) return
@@ -91,6 +92,7 @@ export const cambiarArchivadoCategoria = async (
     headers: crearHeadersAutenticacion(true),
     body: JSON.stringify({
       id: categoria.id,
+      usuarioId: categoria.usuarioId ?? null,
       nombre: categoria.nombre,
       tipo: categoria.tipo,
       color: categoria.color ?? null,
@@ -104,8 +106,8 @@ export const cambiarArchivadoCategoria = async (
     const errorText = await response.text()
     throw new Error(
       archivada
-        ? `No se pudo archivar la categoría. ${errorText}`
-        : `No se pudo desarchivar la categoría. ${errorText}`
+        ? `No hemos podido archivar la categoría. ${errorText}`
+        : `No hemos podido recuperar la categoría archivada. ${errorText}`
     )
   }
 

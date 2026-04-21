@@ -36,7 +36,7 @@ export const getAlertas = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(errorText || 'No se pudieron cargar las alertas.')
+    throw new Error(errorText || 'No hemos podido cargar tus avisos.')
   }
 
   return await response.json()
@@ -50,7 +50,7 @@ export const getAlertasNoLeidasTotal = async (): Promise<number> => {
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(errorText || 'No se pudo obtener el total de alertas no leídas.')
+    throw new Error(errorText || 'No hemos podido comprobar tus avisos pendientes.')
   }
 
   const data = await response.json()
@@ -65,6 +65,6 @@ export const marcarTodasAlertasLeidas = async () => {
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(errorText || 'No se pudieron marcar las alertas como leídas.')
+    throw new Error(errorText || 'No hemos podido marcar los avisos como leídos.')
   }
 }

@@ -132,10 +132,6 @@ const puedeSugerirIA = computed(() => {
   )
 })
 
-const confianzaSugeridaPorcentaje = computed(() => {
-  return Math.round((sugerenciaIA.value?.mejorSugerencia?.confianza ?? 0) * 100)
-})
-
 const fechaFormateada = computed(() => {
   if (!fecha.value) return ''
 
@@ -155,7 +151,7 @@ const cargarCategorias = async () => {
   try {
     categorias.value = await getCategorias()
   } catch (error: any) {
-    await mostrarToast(error?.message || 'No se pudieron cargar las categorías.', 'danger')
+    await mostrarToast(error?.message || 'No hemos podido cargar las categorías.', 'danger')
   } finally {
     cargandoCategorias.value = false
   }
@@ -190,7 +186,7 @@ const solicitarSugerenciaIA = async () => {
     if (requestId !== sugerenciaRequestId) return
     sugerenciaIA.value = null
     errorSugerenciaIA.value =
-      error?.message || 'No se pudo obtener una sugerencia de categoría en este momento.'
+      error?.message || 'Ahora mismo no podemos recomendar una categoría.'
   } finally {
     if (requestId === sugerenciaRequestId) {
       cargandoSugerenciaIA.value = false
@@ -205,6 +201,7 @@ const programarSugerenciaIA = () => {
   }
 
   if (!puedeSugerirIA.value) {
+    sugerenciaRequestId++
     limpiarSugerenciaIA()
     return
   }
@@ -219,7 +216,7 @@ const aplicarSugerenciaIA = async () => {
   if (!sugerida?.categoriaId) return
 
   categoriaId.value = sugerida.categoriaId
-  await mostrarToast(`Sugerencia aplicada: ${sugerida.categoriaNombre}.`)
+  await mostrarToast(`Categoría recomendada aplicada: ${sugerida.categoriaNombre}.`)
 }
 
 const cerrar = () => {
@@ -274,7 +271,7 @@ const onCategoriaGuardada = async (formulario: CategoriaFormulario) => {
 
     await mostrarToast('Categoría creada correctamente.')
   } catch (error: any) {
-    await mostrarToast(error?.message || 'No se pudo crear la categoría.', 'danger')
+    await mostrarToast(error?.message || 'No hemos podido crear la categoría.', 'danger')
   }
 }
 
@@ -394,28 +391,24 @@ const mostrarToast = async (
 
           <div v-if="!props.soloCategoria && cargandoSugerenciaIA" class="sugerencia-ia sugerencia-ia--neutral">
             <ion-spinner name="crescent" />
-            <ion-text>Analizando descripción para sugerir categoría...</ion-text>
+            <ion-text>Buscando la categoría que mejor encaja...</ion-text>
           </div>
 
           <div
-            v-else-if="!props.soloCategoria && sugerenciaIA?.mejorSugerencia"
+            v-else-if="!props.soloCategoria && puedeSugerirIA && sugerenciaIA?.mejorSugerencia"
             class="sugerencia-ia"
             :class="sugerenciaIA.requiereConfirmacion ? 'sugerencia-ia--warning' : 'sugerencia-ia--success'"
           >
             <ion-text>
-              <strong>Sugerencia IA: {{ sugerenciaIA.mejorSugerencia.categoriaNombre }}</strong>
-            </ion-text>
-
-            <ion-text>
-              Confianza estimada: {{ confianzaSugeridaPorcentaje }}%
+              <strong>Categoría recomendada: {{ sugerenciaIA.mejorSugerencia.categoriaNombre }}</strong>
             </ion-text>
 
             <ion-text v-if="sugerenciaIA.requiereConfirmacion">
-              Confianza menor al 70%. Puedes aplicarla manualmente si te encaja.
+              Si te encaja, puedes usar esta categoría.
             </ion-text>
 
             <ion-text v-else>
-              Confianza alta. Si dejas "Sin categoría", se aplicará automáticamente al guardar.
+              Si la dejas en "Sin categoría", se asignará automáticamente al guardar.
             </ion-text>
 
             <ion-button
@@ -425,7 +418,7 @@ const mostrarToast = async (
               :disabled="!sugerenciaIA.mejorSugerencia.categoriaId"
               @click="aplicarSugerenciaIA"
             >
-              Usar sugerencia
+              Usar categoría
             </ion-button>
           </div>
 

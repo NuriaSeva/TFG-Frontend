@@ -240,7 +240,7 @@ const onRegistrar = async () => {
 
 .password-box {
   background: #ffffff;
-  border: 1px solid rgba(35, 63, 107, 0.08);
+  border: 1px solid rgba(36, 58, 94, 0.12);
   border-radius: 16px;
   padding: 14px 14px 10px;
   margin: -2px 0 14px;
@@ -250,7 +250,7 @@ const onRegistrar = async () => {
   margin: 0 0 10px;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #233f6b;
+  color: var(--finmind-color-primary);
 }
 
 .password-rules-list {
@@ -291,9 +291,9 @@ const onRegistrar = async () => {
 
 .boton-principal {
   margin-top: 8px;
-  --background: #f1b80f;
-  --background-hover: #f1b80f;
-  --background-activated: #f1b80f;
+  --background: var(--finmind-color-accent);
+  --background-hover: var(--finmind-color-accent);
+  --background-activated: var(--finmind-color-accent);
   --color: #1b1b1f;
   --border-radius: 14px;
   --box-shadow: none;
@@ -302,6 +302,6 @@ const onRegistrar = async () => {
 }
 
 .enlace-texto {
-  color: #233f6b;
+  color: var(--finmind-color-primary);
 }
 </style>

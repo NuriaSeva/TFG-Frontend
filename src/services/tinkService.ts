@@ -27,7 +27,7 @@ export const getLoginUrl = async (): Promise<LoginUrlResponse> => {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('errorText:', errorText)
-      throw new Error(`No se pudo obtener la URL de Tink. ${response.status} - ${errorText}`)
+      throw new Error(`No hemos podido iniciar la conexión con tu banco. ${errorText}`)
     }
 
     const data = await response.json()
@@ -76,7 +76,7 @@ export const getTransactionsLoginUrl = async (
 
     if (!response.ok) {
       const errorText = await response.text()
-          throw new Error(extraerMensajeError(errorText, 'No se pudo obtener la URL de autorización de transacciones'))
+          throw new Error(extraerMensajeError(errorText, 'No hemos podido iniciar la autorización de movimientos'))
     }
     return await response.json()
   } catch (error) {
@@ -92,6 +92,6 @@ export const desvincularCuentaBancaria = async (): Promise<void> => {
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo desvincular la cuenta. ${errorText}`)
+    throw new Error(`No hemos podido desvincular la cuenta bancaria. ${errorText}`)
   }
 }

@@ -76,7 +76,7 @@ export const getResumenMesActual = async (
 
   if (!response.ok) {
     const errorText = (await response.text()).trim()
-    throw new Error(`[${response.status}] ${errorText || 'No se pudo cargar el resumen del mes.'}`)
+    throw new Error(errorText || 'No hemos podido cargar tu resumen de este mes.')
   }
 
   return await response.json()
@@ -92,7 +92,7 @@ export const getVisualizaciones = async (
 
   if (!response.ok) {
     const errorText = (await response.text()).trim()
-    throw new Error(`[${response.status}] ${errorText || 'No se pudieron cargar las visualizaciones.'}`)
+    throw new Error(errorText || 'No hemos podido cargar las visualizaciones.')
   }
 
   return await response.json()
@@ -108,7 +108,7 @@ export const getMapaCalorMesActual = async (
 
   if (!response.ok) {
     const errorText = (await response.text()).trim()
-    throw new Error(`[${response.status}] ${errorText || 'No se pudo cargar el mapa de calor.'}`)
+    throw new Error(errorText || 'No hemos podido cargar el mapa de calor.')
   }
 
   return await response.json()

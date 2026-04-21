@@ -29,7 +29,7 @@ export const getCuentaPrincipalPorUsuario = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`No se pudo obtener la cuenta bancaria. ${errorText}`)
+    throw new Error(`No hemos podido cargar la cuenta bancaria. ${errorText}`)
   }
 
   return await response.json()

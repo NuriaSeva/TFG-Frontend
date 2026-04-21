@@ -15,7 +15,7 @@ export const getConfiguracionUsuario = async (): Promise<ConfiguracionUsuarioRes
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(errorText || 'No se pudo obtener la configuración del usuario.')
+    throw new Error(errorText || 'No hemos podido cargar tu configuración.')
   }
 
   return await response.json()
@@ -32,8 +32,10 @@ export const actualizarNotificacionesActivas = async (
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(errorText || 'No se pudo actualizar la configuración de alertas.')
+    throw new Error(errorText || 'No hemos podido guardar los cambios de avisos.')
   }
 
   return await response.json()
 }
+
+

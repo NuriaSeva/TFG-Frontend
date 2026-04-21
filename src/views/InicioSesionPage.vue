@@ -141,9 +141,9 @@ const onIniciarSesion = async () => {
 
 .boton-principal {
   margin-top: 8px;
-  --background: #233f6b;
-  --background-hover: #233f6b;
-  --background-activated: #233f6b;
+  --background: var(--finmind-color-primary);
+  --background-hover: var(--finmind-color-primary);
+  --background-activated: var(--finmind-color-primary);
   --border-radius: 14px;
   --box-shadow: none;
   font-weight: 600;
@@ -151,6 +151,6 @@ const onIniciarSesion = async () => {
 }
 
 .enlace-texto {
-  color: #f1b80f;
+  color: var(--finmind-color-accent);
 }
 </style>

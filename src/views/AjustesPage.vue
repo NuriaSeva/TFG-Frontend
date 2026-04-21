@@ -3,7 +3,12 @@
     <ion-header class="ion-no-border">
       <ion-toolbar class="custom-toolbar">
         <div class="topbar">
-          <h1 class="topbar-title">Ajustes</h1>
+          <div>
+            <h1 class="topbar-title">Ajustes</h1>
+            <p class="topbar-subtitle">Preferencias y seguridad</p>
+          </div>
+
+          <div class="header-spacer" aria-hidden="true"></div>
         </div>
       </ion-toolbar>
     </ion-header>
@@ -97,10 +102,7 @@
                   </div>
 
                   <div>
-                    <span class="settings-row-title">Alertas automáticas</span>
-                    <p class="settings-row-subtitle">
-                      Activa o desactiva la generación de avisos en Inicio y campana.
-                    </p>
+                    <span class="settings-row-title">Alertas</span>
                   </div>
                 </div>
 
@@ -422,7 +424,7 @@ const guardarNuevaPassword = async () => {
     cerrarModalPassword()
     await mostrarToast('Contraseña actualizada correctamente.', 'success')
   } catch (error: any) {
-    await mostrarToast(error?.message || 'No se pudo cambiar la contraseña.', 'danger')
+    await mostrarToast(error?.message || 'No hemos podido cambiar la contraseña.', 'danger')
   } finally {
     guardandoPassword.value = false
   }
@@ -458,7 +460,7 @@ const cargarConfiguracionAlertas = async () => {
     const configuracion = await getConfiguracionUsuario()
     alertasActivas.value = configuracion.notificacionesActivas
   } catch (error: any) {
-    await mostrarToast(error?.message || 'No se pudo cargar la configuración de alertas.', 'warning')
+    await mostrarToast(error?.message || 'No hemos podido cargar la configuración de avisos.', 'warning')
   } finally {
     cargandoAlertas.value = false
   }
@@ -482,7 +484,7 @@ const onToggleAlertas = async (event: CustomEvent) => {
     )
   } catch (error: any) {
     alertasActivas.value = valorAnterior
-    await mostrarToast(error?.message || 'No se pudo actualizar la configuración de alertas.', 'danger')
+    await mostrarToast(error?.message || 'No hemos podido guardar la configuración de avisos.', 'danger')
   } finally {
     actualizandoAlertas.value = false
   }
@@ -506,16 +508,10 @@ onMounted(async () => {
   padding: 16px;
 }
 
-.topbar {
-  padding: 16px 18px 18px;
-}
-
-.topbar-title {
-  margin: 0;
-  font-size: 1.72rem;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.15;
+.header-spacer {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
 }
 
 .settings-section {

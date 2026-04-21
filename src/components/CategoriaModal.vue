@@ -323,6 +323,26 @@ const onGuardar = () => {
 </template>
 
 <style scoped>
+:global(.finmind-form-modal) {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 100%;
+  --max-height: 100%;
+  --border-radius: 0;
+  --box-shadow: none;
+}
+
+.modal-header ion-toolbar {
+  --background: #233f6b;
+  --color: #ffffff;
+  --min-height: 78px;
+  --padding-top: env(safe-area-inset-top);
+}
+
+.modal-content {
+  --background: #f8f7f6;
+}
+
 .contenedor-modal {
   padding: 16px;
 }
