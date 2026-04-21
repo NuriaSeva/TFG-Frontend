@@ -28,6 +28,14 @@ export interface DashboardVisualizacionesResponse {
   resumenMesActual: DashboardResumenResponse
   distribucionGastosPorCategoria: DashboardCategoriaGastoResponse[]
   evolucionUltimosMeses: DashboardEvolucionMensualResponse[]
+  alertasProactivas: DashboardAlertaProactivaResponse[]
+}
+
+export interface DashboardAlertaProactivaResponse {
+  tipo: string
+  severidad: 'baja' | 'media' | 'alta'
+  titulo: string
+  mensaje: string
 }
 
 export interface DashboardMapaCalorDiaResponse {

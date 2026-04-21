@@ -11,6 +11,9 @@ export interface TransaccionListadoResponse {
   id: string
   cuentaBancariaId: string | null
   categoriaId: string | null
+  categoriaNombre?: string | null
+  categoriaIcono?: string | null
+  categoriaColor?: string | null
   importe: number
   moneda: string
   tipo: number
@@ -20,7 +23,6 @@ export interface TransaccionListadoResponse {
   descripcion: string | null
   idTransaccionExterna: string | null
   usuarioId?: string
-  categoriaNombre?: string | null
 }
 
 export interface PaginacionResponse<T> {
@@ -331,6 +333,29 @@ export const actualizarMovimiento = async (payload: ActualizarMovimientoRequest)
   if (!response.ok) {
     const errorText = await response.text()
     throw new Error(`No se pudo actualizar el movimiento. ${errorText}`)
+  }
+
+  if (response.status === 204) return
+
+  const text = await response.text()
+  return text ? JSON.parse(text) : null
+}
+
+export const actualizarCategoriaTransaccionImportada = async (
+  id: string,
+  categoriaId: string | null
+) => {
+  const response = await fetch(`${TRANSACCIONES_API_URL}/${id}/categoria`, {
+    method: 'PATCH',
+    headers: crearHeadersAutenticacion(true),
+    body: JSON.stringify({
+      categoriaId
+    })
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`No se pudo actualizar la categoría del movimiento importado. ${errorText}`)
   }
 
   if (response.status === 204) return

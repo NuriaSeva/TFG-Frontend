@@ -44,6 +44,7 @@ export interface MovimientoFormulario {
 const props = defineProps<{
   abierto: boolean
   movimientoInicial?: MovimientoFormulario | null
+  soloCategoria?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -118,12 +119,14 @@ const categoriasFiltradas = computed(() => {
 })
 
 const formularioValido = computed(() => {
+  if (props.soloCategoria) return true
   return importe.value !== null && Number(importe.value) > 0 && fecha.value.trim() !== ''
 })
 
 const puedeSugerirIA = computed(() => {
   return (
     props.abierto &&
+    !props.soloCategoria &&
     categoriaId.value == null &&
     descripcion.value.trim().length >= 3
   )
@@ -236,6 +239,15 @@ const guardar = () => {
   })
 }
 
+const tituloModal = computed(() => {
+  if (props.soloCategoria) return 'Editar categoría'
+  return props.movimientoInicial ? 'Editar movimiento' : 'Nuevo movimiento'
+})
+
+const textoBotonGuardar = computed(() => {
+  return props.soloCategoria ? 'Guardar categoría' : 'Guardar movimiento'
+})
+
 watch(
   [descripcion, tipo, categoriaId, () => props.abierto],
   () => {
@@ -285,7 +297,7 @@ const mostrarToast = async (
   <ion-modal class="finmind-form-modal" :is-open="abierto" @didDismiss="cerrar">
     <ion-header class="modal-header">
       <ion-toolbar>
-        <ion-title>Nuevo movimiento</ion-title>
+        <ion-title>{{ tituloModal }}</ion-title>
         <ion-buttons slot="end">
           <ion-button @click="cerrar">Cerrar</ion-button>
         </ion-buttons>
@@ -295,7 +307,7 @@ const mostrarToast = async (
     <ion-content class="modal-content" :fullscreen="true">
       <div class="contenedor-modal">
         <ion-list lines="none" class="lista-formulario">
-          <ion-item class="item-formulario">
+          <ion-item v-if="!props.soloCategoria" class="item-formulario">
             <ion-select
               v-model="tipo"
               label="Tipo"
@@ -307,7 +319,7 @@ const mostrarToast = async (
             </ion-select>
           </ion-item>
 
-          <ion-item class="item-formulario">
+          <ion-item v-if="!props.soloCategoria" class="item-formulario">
             <ion-input
               v-model.number="importe"
               type="number"
@@ -317,7 +329,7 @@ const mostrarToast = async (
             />
           </ion-item>
 
-          <ion-item class="item-formulario">
+          <ion-item v-if="!props.soloCategoria" class="item-formulario">
             <ion-input
               v-model="descripcion"
               type="text"
@@ -327,7 +339,7 @@ const mostrarToast = async (
             />
           </ion-item>
 
-          <ion-item class="item-formulario">
+          <ion-item v-if="!props.soloCategoria" class="item-formulario">
             <ion-input
               v-model="moneda"
               type="text"
@@ -337,7 +349,7 @@ const mostrarToast = async (
             />
           </ion-item>
 
-          <div class="bloque-fecha">
+          <div v-if="!props.soloCategoria" class="bloque-fecha">
             <div class="bloque-fecha__header">
               <span class="bloque-fecha__label">Fecha</span>
               <div class="bloque-fecha__valor">
@@ -380,13 +392,13 @@ const mostrarToast = async (
             </ion-button>
           </div>
 
-          <div v-if="cargandoSugerenciaIA" class="sugerencia-ia sugerencia-ia--neutral">
+          <div v-if="!props.soloCategoria && cargandoSugerenciaIA" class="sugerencia-ia sugerencia-ia--neutral">
             <ion-spinner name="crescent" />
             <ion-text>Analizando descripción para sugerir categoría...</ion-text>
           </div>
 
           <div
-            v-else-if="sugerenciaIA?.mejorSugerencia"
+            v-else-if="!props.soloCategoria && sugerenciaIA?.mejorSugerencia"
             class="sugerencia-ia"
             :class="sugerenciaIA.requiereConfirmacion ? 'sugerencia-ia--warning' : 'sugerencia-ia--success'"
           >
@@ -418,7 +430,7 @@ const mostrarToast = async (
           </div>
 
           <ion-text
-            v-else-if="errorSugerenciaIA && descripcion.trim().length >= 3 && categoriaId == null"
+            v-else-if="!props.soloCategoria && errorSugerenciaIA && descripcion.trim().length >= 3 && categoriaId == null"
             color="medium"
             class="texto-ayuda"
           >
@@ -431,7 +443,7 @@ const mostrarToast = async (
           <ion-text color="medium">Cargando categorías...</ion-text>
         </div>
 
-        <ion-text v-if="!formularioValido" color="danger" class="texto-ayuda">
+        <ion-text v-if="!props.soloCategoria && !formularioValido" color="danger" class="texto-ayuda">
           Debes indicar al menos un importe válido y una fecha.
         </ion-text>
 
@@ -442,12 +454,12 @@ const mostrarToast = async (
             :disabled="!formularioValido"
             @click="guardar"
           >
-            Guardar movimiento
+            {{ textoBotonGuardar }}
           </ion-button>
         </div>
       </div>
 
-      <ion-modal keep-contents-mounted>
+      <ion-modal v-if="!props.soloCategoria" keep-contents-mounted>
         <ion-datetime
           id="selector-fecha"
           v-model="fecha"

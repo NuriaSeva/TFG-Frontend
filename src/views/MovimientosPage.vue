@@ -141,10 +141,11 @@
                     <div class="movement-left">
                       <div
                         class="movement-icon"
-                        :class="transaccion.tipo === 1 ? 'income' : 'expense'"
+                        :style="estiloFondoIconoCategoria(transaccion)"
                       >
                         <ion-icon
-                          :icon="transaccion.tipo === 1 ? arrowUpOutline : arrowDownOutline"
+                          :icon="resolverIconoCategoria(transaccion)"
+                          :style="estiloColorIconoCategoria(transaccion)"
                         />
                       </div>
 
@@ -168,7 +169,7 @@
                       </div>
 
                       <button
-                        v-if="Number(transaccion.origen) === 1"
+                        v-if="Number(transaccion.origen) === 1 || Number(transaccion.origen) === 2"
                         class="edit-movement-button"
                         type="button"
                         @click.stop="abrirEditarMovimiento(transaccion)"
@@ -211,6 +212,7 @@
       <NuevoMovimientoModal
         :abierto="mostrandoModalNuevo"
         :movimiento-inicial="movimientoSeleccionado"
+        :solo-categoria="editandoSoloCategoria"
         @cerrar="cerrarNuevoMovimiento"
         @guardar="onMovimientoGuardado"
       />
@@ -261,17 +263,58 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   addOutline,
   alertCircleOutline,
-  arrowDownOutline,
-  arrowUpOutline,
+  bagHandleOutline,
+  basketOutline,
+  bedOutline,
+  bookOutline,
+  briefcaseOutline,
+  buildOutline,
+  busOutline,
+  cafeOutline,
+  carOutline,
+  cardOutline,
+  cartOutline,
+  cashOutline,
+  colorWandOutline,
+  diamondOutline,
   documentTextOutline,
   downloadOutline,
+  filmOutline,
+  fitnessOutline,
+  flowerOutline,
+  footballOutline,
   folderOpenOutline,
   funnelOutline,
+  gameControllerOutline,
+  giftOutline,
+  hardwareChipOutline,
+  heartOutline,
+  homeOutline,
+  laptopOutline,
+  leafOutline,
+  libraryOutline,
+  medicalOutline,
+  musicalNotesOutline,
+  newspaperOutline,
+  nutritionOutline,
+  airplaneOutline,
+  pawOutline,
+  phonePortraitOutline,
+  pricetagOutline,
   receiptOutline,
+  restaurantOutline,
+  rocketOutline,
+  schoolOutline,
   searchOutline,
-  shareSocialOutline
+  shirtOutline,
+  shareSocialOutline,
+  storefrontOutline,
+  trainOutline,
+  trophyOutline,
+  walletOutline
 } from 'ionicons/icons'
 import {
+  actualizarCategoriaTransaccionImportada,
   actualizarMovimiento,
   crearMovimientoManual,
   exportarTransaccionesCsv,
@@ -305,6 +348,7 @@ const totalPages = ref(0)
 
 const mostrandoModalNuevo = ref(false)
 const movimientoSeleccionado = ref<TransaccionListadoResponse | null>(null)
+const editandoSoloCategoria = ref(false)
 const mostrandoAccionesExportacion = ref(false)
 const mostrandoAccionesDestinoExportacion = ref(false)
 const exportacionPendienteTodo = ref(false)
@@ -312,26 +356,70 @@ const toastAbierto = ref(false)
 const toastMensaje = ref('')
 const toastColor = ref<'success' | 'warning' | 'danger'>('success')
 
+const iconosCategoriaMap: Record<string, string> = {
+  'pricetag-outline': pricetagOutline,
+  'wallet-outline': walletOutline,
+  'film-outline': filmOutline,
+  'shirt-outline': shirtOutline,
+  'heart-outline': heartOutline,
+  'home-outline': homeOutline,
+  'car-outline': carOutline,
+  'bus-outline': busOutline,
+  'train-outline': trainOutline,
+  'cart-outline': cartOutline,
+  'medical-outline': medicalOutline,
+  'gift-outline': giftOutline,
+  'airplane-outline': airplaneOutline,
+  'school-outline': schoolOutline,
+  'football-outline': footballOutline,
+  'game-controller-outline': gameControllerOutline,
+  'cash-outline': cashOutline,
+  'briefcase-outline': briefcaseOutline,
+  'fitness-outline': fitnessOutline,
+  'cafe-outline': cafeOutline,
+  'restaurant-outline': restaurantOutline,
+  'color-wand-outline': colorWandOutline,
+  'phone-portrait-outline': phonePortraitOutline,
+  'laptop-outline': laptopOutline,
+  'book-outline': bookOutline,
+  'musical-notes-outline': musicalNotesOutline,
+  'paw-outline': pawOutline,
+  'card-outline': cardOutline,
+  'bag-handle-outline': bagHandleOutline,
+  'basket-outline': basketOutline,
+  'library-outline': libraryOutline,
+  'bed-outline': bedOutline,
+  'build-outline': buildOutline,
+  'diamond-outline': diamondOutline,
+  'flower-outline': flowerOutline,
+  'hardware-chip-outline': hardwareChipOutline,
+  'leaf-outline': leafOutline,
+  'newspaper-outline': newspaperOutline,
+  'nutrition-outline': nutritionOutline,
+  'rocket-outline': rocketOutline,
+  'storefront-outline': storefrontOutline,
+  'trophy-outline': trophyOutline
+}
+
 const abrirNuevoMovimiento = () => {
   movimientoSeleccionado.value = null
+  editandoSoloCategoria.value = false
   mostrandoModalNuevo.value = true
 }
 
 const abrirEditarMovimiento = (transaccion: TransaccionListadoResponse) => {
-  if (Number(transaccion.origen) !== 1) {
-    return
-  }
-
   movimientoSeleccionado.value = {
     ...transaccion
   }
 
+  editandoSoloCategoria.value = Number(transaccion.origen) !== 1
   mostrandoModalNuevo.value = true
 }
 
 const cerrarNuevoMovimiento = () => {
   mostrandoModalNuevo.value = false
   movimientoSeleccionado.value = null
+  editandoSoloCategoria.value = false
 }
 
 const construirPayloadActualizacion = (
@@ -429,6 +517,18 @@ const onMovimientoGuardado = async (formulario: MovimientoFormulario) => {
     const isEdicion = movimientoSeleccionado.value != null
 
     if (isEdicion && movimientoSeleccionado.value) {
+      if (editandoSoloCategoria.value) {
+        await actualizarCategoriaTransaccionImportada(
+          movimientoSeleccionado.value.id,
+          formulario.categoriaId ?? null
+        )
+
+        mostrarToast('Categoría actualizada correctamente.', 'success')
+        cerrarNuevoMovimiento()
+        await cargarTransacciones(true)
+        return
+      }
+
       await actualizarMovimiento(
         construirPayloadActualizacion(
           movimientoSeleccionado.value,
@@ -710,6 +810,32 @@ const formatearFechaCorta = (fecha: string) => {
     day: '2-digit',
     month: 'short'
   })
+}
+
+const normalizarColor = (color?: string | null) => {
+  if (!color) return '#233f6b'
+  const valor = color.trim()
+  return valor.startsWith('#') ? valor : `#${valor}`
+}
+
+const resolverIconoCategoria = (transaccion: TransaccionListadoResponse) => {
+  const iconoCategoria = transaccion.categoriaIcono?.trim().toLowerCase()
+  if (!iconoCategoria) return pricetagOutline
+  return iconosCategoriaMap[iconoCategoria] ?? pricetagOutline
+}
+
+const estiloFondoIconoCategoria = (transaccion: TransaccionListadoResponse) => {
+  const color = normalizarColor(transaccion.categoriaColor)
+  return {
+    background: `linear-gradient(0deg, rgba(255,255,255,0.78), rgba(255,255,255,0.78)), ${color}`
+  }
+}
+
+const estiloColorIconoCategoria = (transaccion: TransaccionListadoResponse) => {
+  const color = normalizarColor(transaccion.categoriaColor)
+  return {
+    color
+  }
 }
 
 const textoImporte = (t: TransaccionListadoResponse) => {

@@ -87,6 +87,35 @@
           </section>
 
           <section class="settings-section">
+            <h2 class="section-title">Alertas y avisos</h2>
+
+            <div class="settings-list">
+              <div class="settings-row settings-row-control">
+                <div class="settings-row-left">
+                  <div class="settings-icon settings-icon-security">
+                    <ion-icon :icon="notificationsOutline" />
+                  </div>
+
+                  <div>
+                    <span class="settings-row-title">Alertas automáticas</span>
+                    <p class="settings-row-subtitle">
+                      Activa o desactiva la generación de avisos en Inicio y campana.
+                    </p>
+                  </div>
+                </div>
+
+                <ion-toggle
+                  :checked="alertasActivas"
+                  class="settings-toggle"
+                  aria-label="Activar alertas automáticas"
+                  :disabled="cargandoAlertas || actualizandoAlertas"
+                  @ionChange="onToggleAlertas"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-section">
             <h2 class="section-title">Cuenta y seguridad</h2>
 
             <div class="settings-list">
@@ -231,12 +260,13 @@ import {
   chevronForwardOutline,
   logOutOutline,
   lockClosedOutline,
+  notificationsOutline,
   textOutline,
   removeCircleOutline,
   eyeOutline,
   optionsOutline
 } from 'ionicons/icons'
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   REQUISITOS_PASSWORD,
@@ -248,10 +278,17 @@ import {
   type TamanoTextoAccesible,
   useAccesibilidad
 } from '@/services/accesibilidadService'
+import {
+  actualizarNotificacionesActivas,
+  getConfiguracionUsuario
+} from '@/services/configuracionUsuarioService'
 
 const router = useRouter()
 const mostrarModalPassword = ref(false)
 const guardandoPassword = ref(false)
+const alertasActivas = ref(true)
+const cargandoAlertas = ref(false)
+const actualizandoAlertas = ref(false)
 
 const formularioPassword = reactive({
   passwordActual: '',
@@ -414,6 +451,46 @@ const onCerrarSesion = async () => {
 
   await alert.present()
 }
+
+const cargarConfiguracionAlertas = async () => {
+  try {
+    cargandoAlertas.value = true
+    const configuracion = await getConfiguracionUsuario()
+    alertasActivas.value = configuracion.notificacionesActivas
+  } catch (error: any) {
+    await mostrarToast(error?.message || 'No se pudo cargar la configuración de alertas.', 'warning')
+  } finally {
+    cargandoAlertas.value = false
+  }
+}
+
+const onToggleAlertas = async (event: CustomEvent) => {
+  const siguienteValor = Boolean((event.detail as { checked?: boolean })?.checked)
+  const valorAnterior = alertasActivas.value
+  alertasActivas.value = siguienteValor
+
+  try {
+    actualizandoAlertas.value = true
+    const resultado = await actualizarNotificacionesActivas(siguienteValor)
+    alertasActivas.value = resultado.notificacionesActivas
+
+    await mostrarToast(
+      resultado.notificacionesActivas
+        ? 'Alertas automáticas activadas.'
+        : 'Alertas automáticas desactivadas.',
+      'success'
+    )
+  } catch (error: any) {
+    alertasActivas.value = valorAnterior
+    await mostrarToast(error?.message || 'No se pudo actualizar la configuración de alertas.', 'danger')
+  } finally {
+    actualizandoAlertas.value = false
+  }
+}
+
+onMounted(async () => {
+  await cargarConfiguracionAlertas()
+})
 </script>
 
 <style scoped>
@@ -514,6 +591,13 @@ const onCerrarSesion = async () => {
   font-size: 0.98rem;
   font-weight: 700;
   color: #17181c;
+}
+
+.settings-row-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: #6f7782;
+  line-height: 1.35;
 }
 
 .settings-row-title-danger {
