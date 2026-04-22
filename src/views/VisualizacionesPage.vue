@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onIonViewWillEnter } from '@ionic/vue'
 import {
   IonPage,
@@ -45,14 +45,16 @@ use([
 ])
 
 const hoy = new Date()
-const mesSeleccionado = ref(hoy.getMonth() + 1)
-const anioSeleccionado = ref(hoy.getFullYear())
+const mesActual = hoy.getMonth() + 1
+const anioActual = hoy.getFullYear()
+const mesSeleccionado = ref(mesActual)
+const anioSeleccionado = ref(anioActual)
 
 const cargando = ref(false)
 const datos = ref<DashboardVisualizacionesResponse | null>(null)
 const mapaCalor = ref<DashboardMapaCalorResponse | null>(null)
 
-const meses = [
+const mesesBase = [
   { value: 1, label: 'Enero' },
   { value: 2, label: 'Febrero' },
   { value: 3, label: 'Marzo' },
@@ -67,7 +69,15 @@ const meses = [
   { value: 12, label: 'Diciembre' }
 ]
 
-const anios = Array.from({ length: 5 }, (_, index) => hoy.getFullYear() - index)
+const anios = Array.from({ length: 3 }, (_, index) => anioActual - index)
+
+const mesesDisponibles = computed(() => {
+  if (anioSeleccionado.value === anioActual) {
+    return mesesBase.filter(m => m.value <= mesActual)
+  }
+
+  return mesesBase
+})
 
 const { preferenciasAccesibilidad } = useAccesibilidad()
 
@@ -137,9 +147,24 @@ onIonViewWillEnter(async () => {
   await cargarDatos()
 })
 
-const onFiltroChange = async () => {
+watch(anioSeleccionado, async (nuevoAnio) => {
+  const mesesValidos = nuevoAnio === anioActual
+    ? mesesBase.filter(m => m.value <= mesActual)
+    : mesesBase
+
+  const mesValido = mesesValidos.some(m => m.value === mesSeleccionado.value)
+
+  if (!mesValido) {
+    mesSeleccionado.value = mesesValidos[mesesValidos.length - 1]?.value ?? 1
+    return
+  }
+
   await cargarDatos()
-}
+})
+
+watch(mesSeleccionado, async () => {
+  await cargarDatos()
+})
 
 const distribucion = computed(() => datos.value?.distribucionGastosPorCategoria ?? [])
 const evolucion = computed(() => datos.value?.evolucionUltimosMeses ?? [])
@@ -456,9 +481,9 @@ const heatmapOptions = computed<any>(() => {
           <div class="filtros-grid">
             <ion-item class="filter-item" lines="none">
               <ion-label position="stacked">Mes</ion-label>
-              <ion-select v-model="mesSeleccionado" interface="popover" @ionChange="onFiltroChange">
+              <ion-select v-model="mesSeleccionado" interface="popover">
                 <ion-select-option
-                  v-for="mes in meses"
+                  v-for="mes in mesesDisponibles"
                   :key="mes.value"
                   :value="mes.value"
                 >
@@ -469,7 +494,7 @@ const heatmapOptions = computed<any>(() => {
 
             <ion-item class="filter-item" lines="none">
               <ion-label position="stacked">Año</ion-label>
-              <ion-select v-model="anioSeleccionado" interface="popover" @ionChange="onFiltroChange">
+              <ion-select v-model="anioSeleccionado" interface="popover">
                 <ion-select-option
                   v-for="anio in anios"
                   :key="anio"

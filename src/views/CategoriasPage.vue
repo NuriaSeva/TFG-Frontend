@@ -22,6 +22,7 @@ import {
   createOutline,
   archiveOutline,
   refreshOutline,
+  trashOutline,
   fileTrayOutline,
   pricetagOutline,
   walletOutline,
@@ -72,6 +73,8 @@ import {
   crearCategoria,
   actualizarCategoria,
   cambiarArchivadoCategoria,
+  eliminarCategoria,
+  obtenerImpactoEliminarCategoria,
   type Categoria
 } from '@/services/categoriaService'
 
@@ -255,6 +258,55 @@ const onCambiarArchivado = async (categoria: Categoria, archivada: boolean) => {
   })
 
   await alert.present()
+}
+
+const onEliminarCategoria = async (categoria: Categoria) => {
+  if (categoria.esSistema) {
+    await mostrarToast('Las categorías del sistema no se pueden eliminar.', 'warning')
+    return
+  }
+
+  try {
+    const impacto = await obtenerImpactoEliminarCategoria(categoria.id)
+    const totalAfectados = impacto.movimientosSinCategoria ?? 0
+    const mensajeImpacto =
+      totalAfectados === 0
+        ? 'No hay movimientos asociados a esta categoría.'
+        : `Se quedarán sin categoría ${totalAfectados} movimiento${totalAfectados === 1 ? '' : 's'}.`
+
+    const alert = await alertController.create({
+      header: 'Eliminar categoría',
+      message: `¿Quieres eliminar la categoría "${categoria.nombre}"? ${mensajeImpacto}`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: () => {
+            void (async () => {
+              try {
+                await eliminarCategoria(categoria.id)
+                await mostrarToast('Categoría eliminada correctamente.')
+                await cargarCategorias()
+              } catch (error: any) {
+                await mostrarToast(
+                  error?.message || 'No se pudo eliminar la categoría.',
+                  'danger'
+                )
+              }
+            })()
+          }
+        }
+      ]
+    })
+
+    await alert.present()
+  } catch (error: any) {
+    await mostrarToast(
+      error?.message || 'No se pudo preparar la eliminación de la categoría.',
+      'danger'
+    )
+  }
 }
 
 const refrescar = async () => {
@@ -445,6 +497,17 @@ const mostrarToast = async (
               >
                 <ion-icon slot="start" :icon="archiveOutline" />
                 {{ categoria.archivada ? 'Desarchivar' : 'Archivar' }}
+              </ion-button>
+
+              <ion-button
+                v-if="!categoria.esSistema"
+                fill="clear"
+                size="small"
+                class="boton-eliminar"
+                @click="onEliminarCategoria(categoria)"
+              >
+                <ion-icon slot="start" :icon="trashOutline" />
+                Eliminar
               </ion-button>
             </div>
           </ion-card-content>
@@ -644,5 +707,9 @@ const mostrarToast = async (
 
 .boton-archivar {
   --color: #667085;
+}
+
+.boton-eliminar {
+  --color: #c43d2f;
 }
 </style>

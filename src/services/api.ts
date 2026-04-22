@@ -2,7 +2,7 @@
 // Local Android Studio: http://10.0.2.2:5047
 // Local navegador:      https://localhost:7197
 // DigitalOcean:        https://goldfish-app-e8j7y.ondigitalocean.app
-export const API_BASE_URL = 'http://10.0.2.2:5047'
+export const API_BASE_URL = 'https://goldfish-app-e8j7y.ondigitalocean.app'
 export const extraerMensajeError = (errorText: string, mensajePorDefecto: string): string => {
   if (!errorText || errorText.trim() === '') {
     return mensajePorDefecto

@@ -168,15 +168,30 @@
                         {{ textoImporte(transaccion) }}
                       </div>
 
-                      <button
+                      <div
                         v-if="Number(transaccion.origen) === 1 || Number(transaccion.origen) === 2"
-                        class="edit-movement-button"
-                        type="button"
-                        @click.stop="abrirEditarMovimiento(transaccion)"
-                        aria-label="Editar movimiento"
+                        class="movement-actions"
                       >
-                        Editar
-                      </button>
+                        <button
+                          class="edit-movement-button"
+                          type="button"
+                          @click.stop="abrirEditarMovimiento(transaccion)"
+                          aria-label="Editar movimiento"
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          v-if="Number(transaccion.origen) === 1"
+                          class="delete-movement-button"
+                          type="button"
+                          @click.stop="confirmarEliminarMovimiento(transaccion)"
+                          :disabled="eliminandoMovimientoId === transaccion.id"
+                          aria-label="Eliminar movimiento"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -257,9 +272,10 @@ import {
   IonSpinner,
   IonToast,
   IonToolbar,
+  onIonViewWillEnter,
   alertController
 } from '@ionic/vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   addOutline,
   alertCircleOutline,
@@ -317,6 +333,7 @@ import {
   actualizarCategoriaTransaccionImportada,
   actualizarMovimiento,
   crearMovimientoManual,
+  eliminarMovimiento,
   exportarTransaccionesCsv,
   getTransaccionesPorUsuario,
   sugerirCategoriaIA,
@@ -335,6 +352,7 @@ const filtroMes = ref<number | null>(mesActual)
 const filtroAnio = ref<number | null>(anioActual)
 const filtroTipo = ref<number | null>(null)
 const filtroTexto = ref('')
+const filtroTextoAplicado = ref('')
 
 const loading = ref(false)
 const exportandoCsv = ref(false)
@@ -355,6 +373,7 @@ const exportacionPendienteTodo = ref(false)
 const toastAbierto = ref(false)
 const toastMensaje = ref('')
 const toastColor = ref<'success' | 'warning' | 'danger'>('success')
+const eliminandoMovimientoId = ref<string | null>(null)
 
 const iconosCategoriaMap: Record<string, string> = {
   'pricetag-outline': pricetagOutline,
@@ -420,6 +439,49 @@ const cerrarNuevoMovimiento = () => {
   mostrandoModalNuevo.value = false
   movimientoSeleccionado.value = null
   editandoSoloCategoria.value = false
+}
+
+const confirmarEliminarMovimiento = async (transaccion: TransaccionListadoResponse) => {
+  if (Number(transaccion.origen) !== 1) return
+  if (eliminandoMovimientoId.value === transaccion.id) return
+
+  const descripcion = transaccion.descripcion?.trim() || 'este movimiento'
+  const alerta = await alertController.create({
+    header: 'Eliminar movimiento',
+    message: `¿Seguro que quieres eliminar ${descripcion}? Esta acción no se puede deshacer.`,
+    buttons: [
+      {
+        text: 'Cancelar',
+        role: 'cancel'
+      },
+      {
+        text: 'Eliminar',
+        role: 'destructive',
+        handler: () => {
+          void (async () => {
+            try {
+              eliminandoMovimientoId.value = transaccion.id
+              await eliminarMovimiento(transaccion.id)
+              await cargarTransacciones(true)
+              mostrarToast('Movimiento eliminado correctamente.', 'success')
+            } catch (error) {
+              console.error(error)
+              mostrarToast(
+                error instanceof Error
+                  ? error.message
+                  : 'No hemos podido eliminar el movimiento.',
+                'danger'
+              )
+            } finally {
+              eliminandoMovimientoId.value = null
+            }
+          })()
+        }
+      }
+    ]
+  })
+
+  await alerta.present()
 }
 
 const construirPayloadActualizacion = (
@@ -724,7 +786,7 @@ const exportarCsv = async (exportarTodo: boolean, modo: ModoExportacionCsv) => {
       mes: filtroMes.value,
       anio: filtroAnio.value,
       tipo: filtroTipo.value,
-      texto: filtroTexto.value,
+      texto: filtroTextoAplicado.value,
       exportarTodo
     }, modo)
 
@@ -764,7 +826,7 @@ const cargarTransacciones = async (reset = false) => {
       mes: filtroMes.value,
       anio: filtroAnio.value,
       tipo: filtroTipo.value,
-      texto: filtroTexto.value,
+      texto: filtroTextoAplicado.value,
       pagina: page.value,
       tamanyo: pageSize.value
     })
@@ -789,6 +851,7 @@ const cargarTransacciones = async (reset = false) => {
 }
 
 const buscar = async () => {
+  filtroTextoAplicado.value = filtroTexto.value.trim()
   await cargarTransacciones(true)
 }
 
@@ -866,7 +929,7 @@ watch(filtroMes, async () => {
   await cargarTransacciones(true)
 })
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   await cargarTransacciones(true)
 })
 </script>
@@ -975,6 +1038,12 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
+.movement-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .edit-movement-button {
   border: none;
   background: transparent;
@@ -982,6 +1051,19 @@ onMounted(async () => {
   font-size: 0.84rem;
   font-weight: 700;
   padding: 0;
+}
+
+.delete-movement-button {
+  border: none;
+  background: transparent;
+  color: #c43d2f;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0;
+}
+
+.delete-movement-button:disabled {
+  opacity: 0.6;
 }
 
 .movement-icon {

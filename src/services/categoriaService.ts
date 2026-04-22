@@ -35,6 +35,10 @@ export interface ActualizarCategoriaRequest {
   archivada: boolean
 }
 
+export interface ImpactoEliminarCategoriaResponse {
+  movimientosSinCategoria: number
+}
+
 export const getCategorias = async (): Promise<Categoria[]> => {
   const response = await fetch(`${CATEGORIAS_API_URL}/obtener`, {
     method: 'GET',
@@ -115,4 +119,32 @@ export const cambiarArchivadoCategoria = async (
 
   const text = await response.text()
   return text ? JSON.parse(text) : null
+}
+
+export const obtenerImpactoEliminarCategoria = async (
+  categoriaId: string
+): Promise<ImpactoEliminarCategoriaResponse> => {
+  const response = await fetch(`${CATEGORIAS_API_URL}/${categoriaId}/impacto-eliminacion`, {
+    method: 'GET',
+    headers: crearHeadersAutenticacion()
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`No hemos podido calcular el impacto de la eliminación. ${errorText}`)
+  }
+
+  return await response.json()
+}
+
+export const eliminarCategoria = async (categoriaId: string) => {
+  const response = await fetch(`${CATEGORIAS_API_URL}/${categoriaId}`, {
+    method: 'DELETE',
+    headers: crearHeadersAutenticacion()
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`No hemos podido eliminar la categoría. ${errorText}`)
+  }
 }

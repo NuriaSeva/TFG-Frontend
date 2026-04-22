@@ -17,6 +17,62 @@
       <div class="page-shell">
         <div class="settings-wrapper">
           <section class="settings-section">
+            <h2 class="section-title">Cuenta y seguridad</h2>
+            <div class="settings-list">
+              <button class="settings-row" type="button" @click="abrirModalPerfil">
+                <div class="settings-row-left">
+                  <div class="settings-icon settings-icon-security">
+                    <ion-icon :icon="personOutline" />
+                  </div>
+                  <span class="settings-row-title">Perfil</span>
+                </div>
+                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
+              </button>
+              <button class="settings-row" type="button" @click="abrirModalPassword">
+                <div class="settings-row-left">
+                  <div class="settings-icon settings-icon-security">
+                    <ion-icon :icon="lockClosedOutline" />
+                  </div>
+
+                  <span class="settings-row-title">Cambiar contraseña</span>
+                </div>
+
+                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
+              </button>
+
+              <button class="settings-row settings-row-danger" type="button" @click="onCerrarSesion">
+                <div class="settings-row-left">
+                  <div class="settings-icon settings-icon-danger">
+                    <ion-icon :icon="logOutOutline" />
+                  </div>
+
+                  <span class="settings-row-title settings-row-title-danger">Cerrar sesión</span>
+                </div>
+
+                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
+              </button>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h2 class="section-title">Organización</h2>
+
+            <div class="settings-list">
+              <button class="settings-row" type="button" @click="irACategorias">
+                <div class="settings-row-left">
+                  <div class="settings-icon settings-icon-accent">
+                    <ion-icon :icon="pricetagsOutline" />
+                  </div>
+
+                  <span class="settings-row-title">Categorías</span>
+                </div>
+
+                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
+              </button>
+            </div>
+          </section>
+
+          <section class="settings-section">
             <h2 class="section-title">Accesibilidad</h2>
 
             <div class="settings-list">
@@ -73,21 +129,6 @@
                 />
               </div>
 
-              <div class="settings-row settings-row-control">
-                <div class="settings-row-left">
-                  <div class="settings-icon settings-icon-accessibility">
-                    <ion-icon :icon="optionsOutline" />
-                  </div>
-
-                  <span class="settings-row-title">Controles más cómodos</span>
-                </div>
-
-                <ion-toggle
-                  v-model="controlesComodos"
-                  class="settings-toggle"
-                  aria-label="Activar controles más cómodos"
-                />
-              </div>
             </div>
           </section>
 
@@ -114,54 +155,29 @@
                   @ionChange="onToggleAlertas"
                 />
               </div>
-            </div>
-          </section>
 
-          <section class="settings-section">
-            <h2 class="section-title">Cuenta y seguridad</h2>
-
-            <div class="settings-list">
-              <button class="settings-row" type="button" @click="abrirModalPassword">
+              <div class="settings-row settings-row-control">
                 <div class="settings-row-left">
                   <div class="settings-icon settings-icon-security">
-                    <ion-icon :icon="lockClosedOutline" />
+                    <ion-icon :icon="notificationsOutline" />
                   </div>
-
-                  <span class="settings-row-title">Cambiar contraseña</span>
+                  <div>
+                    <span class="settings-row-title">Modo de avisos</span>
+                  </div>
                 </div>
 
-                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
-              </button>
-
-              <button class="settings-row settings-row-danger" type="button" @click="onCerrarSesion">
-                <div class="settings-row-left">
-                  <div class="settings-icon settings-icon-danger">
-                    <ion-icon :icon="logOutOutline" />
-                  </div>
-
-                  <span class="settings-row-title settings-row-title-danger">Cerrar sesión</span>
-                </div>
-
-                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
-              </button>
-            </div>
-          </section>
-
-          <section class="settings-section">
-            <h2 class="section-title">Organización</h2>
-
-            <div class="settings-list">
-              <button class="settings-row" type="button" @click="irACategorias">
-                <div class="settings-row-left">
-                  <div class="settings-icon settings-icon-accent">
-                    <ion-icon :icon="pricetagsOutline" />
-                  </div>
-
-                  <span class="settings-row-title">Categorías</span>
-                </div>
-
-                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
-              </button>
+                <ion-select
+                  :model-value="modoAvisos"
+                  interface="popover"
+                  class="settings-select"
+                  aria-label="Seleccionar modo de avisos"
+                  :disabled="cargandoAlertas || actualizandoAlertas || !alertasActivas"
+                  @ionChange="onCambioModoAvisos"
+                >
+                  <ion-select-option value="todas">Todas</ion-select-option>
+                  <ion-select-option value="solo-criticas">Solo criticas</ion-select-option>
+                </ion-select>
+              </div>
             </div>
           </section>
         </div>
@@ -233,6 +249,78 @@
           </div>
         </ion-content>
       </ion-modal>
+
+      <ion-modal :is-open="mostrarModalPerfil" @didDismiss="cerrarModalPerfil">
+        <ion-header class="ion-no-border modal-header-shell">
+          <ion-toolbar class="modal-toolbar">
+            <ion-title>Editar perfil</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="cerrarModalPerfil">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="modal-content">
+          <div class="password-modal-body">
+            <div class="password-form-card">
+              <ion-item lines="none" class="profile-item">
+                <ion-label position="stacked">Correo electronico</ion-label>
+                <ion-input
+                  :value="formularioPerfil.email"
+                  readonly
+                  disabled
+                  placeholder="No disponible"
+                />
+              </ion-item>
+              <ion-item lines="none" class="profile-item">
+                <ion-label position="stacked">Nombre</ion-label>
+                <ion-input
+                  v-model="formularioPerfil.nombre"
+                  placeholder="Tu nombre"
+                  :disabled="cargandoPerfil || guardandoPerfil"
+                />
+              </ion-item>
+              <ion-item lines="none" class="profile-item">
+                <ion-label position="stacked">Apellidos</ion-label>
+                <ion-input
+                  v-model="formularioPerfil.apellidos"
+                  placeholder="Tus apellidos"
+                  :disabled="cargandoPerfil || guardandoPerfil"
+                />
+              </ion-item>
+              <ion-item lines="none" class="profile-item">
+                <ion-label position="stacked">Moneda preferida</ion-label>
+                <ion-select
+                  v-model="formularioPerfil.monedaPreferida"
+                  interface="popover"
+                  aria-label="Seleccionar moneda preferida"
+                  :disabled="cargandoPerfil || guardandoPerfil"
+                >
+                  <ion-select-option value="EUR">Euro (EUR)</ion-select-option>
+                  <ion-select-option value="USD">Dolar estadounidense (USD)</ion-select-option>
+                  <ion-select-option value="GBP">Libra esterlina (GBP)</ion-select-option>
+                </ion-select>
+              </ion-item>
+              <div v-if="mensajeValidacionPerfil" class="profile-validation-box">
+                {{ mensajeValidacionPerfil }}
+              </div>
+              <ion-button
+                expand="block"
+                class="profile-save-button"
+                :disabled="cargandoPerfil || guardandoPerfil"
+                @click="guardarPerfilUsuario"
+              >
+                {{
+                  cargandoPerfil
+                    ? 'Cargando perfil...'
+                    : guardandoPerfil
+                      ? 'Guardando...'
+                      : 'Guardar cambios de perfil'
+                }}
+              </ion-button>
+            </div>
+          </div>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -263,10 +351,10 @@ import {
   logOutOutline,
   lockClosedOutline,
   notificationsOutline,
+  personOutline,
   textOutline,
   removeCircleOutline,
-  eyeOutline,
-  optionsOutline
+  eyeOutline
 } from 'ionicons/icons'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -284,18 +372,34 @@ import {
   actualizarNotificacionesActivas,
   getConfiguracionUsuario
 } from '@/services/configuracionUsuarioService'
+import {
+  actualizarPerfilUsuario,
+  getPerfilUsuario
+} from '@/services/perfilUsuarioService'
 
 const router = useRouter()
 const mostrarModalPassword = ref(false)
+const mostrarModalPerfil = ref(false)
 const guardandoPassword = ref(false)
 const alertasActivas = ref(true)
+const notificacionesSoloCriticas = ref(false)
 const cargandoAlertas = ref(false)
 const actualizandoAlertas = ref(false)
+const cargandoPerfil = ref(false)
+const guardandoPerfil = ref(false)
 
 const formularioPassword = reactive({
   passwordActual: '',
   passwordNueva: '',
   repetirPasswordNueva: ''
+})
+
+const formularioPerfil = reactive({
+  email: '',
+  nombre: '',
+  apellidos: '',
+  monedaPreferida: 'EUR',
+  idioma: 'es'
 })
 
 const {
@@ -318,10 +422,9 @@ const altoContraste = computed<boolean>({
   set: value => actualizarPreferenciasAccesibilidad({ altoContraste: value })
 })
 
-const controlesComodos = computed<boolean>({
-  get: () => preferenciasAccesibilidad.value.controlesComodos,
-  set: value => actualizarPreferenciasAccesibilidad({ controlesComodos: value })
-})
+const modoAvisos = computed<'todas' | 'solo-criticas'>(() =>
+  notificacionesSoloCriticas.value ? 'solo-criticas' : 'todas'
+)
 
 const mensajeValidacionPassword = computed(() => {
   if (!formularioPassword.passwordActual && !formularioPassword.passwordNueva && !formularioPassword.repetirPasswordNueva) {
@@ -356,6 +459,33 @@ const mensajeValidacionPassword = computed(() => {
   return ''
 })
 
+const mensajeValidacionPerfil = computed(() => {
+  const nombre = formularioPerfil.nombre.trim()
+  const apellidos = formularioPerfil.apellidos.trim()
+
+  if (!nombre) {
+    return 'El nombre es obligatorio.'
+  }
+
+  if (nombre.length < 2) {
+    return 'El nombre debe tener al menos 2 caracteres.'
+  }
+
+  if (nombre.length > 80) {
+    return 'El nombre no puede superar los 80 caracteres.'
+  }
+
+  if (apellidos.length > 120) {
+    return 'Los apellidos no pueden superar los 120 caracteres.'
+  }
+
+  if (!formularioPerfil.monedaPreferida) {
+    return 'Selecciona una moneda preferida.'
+  }
+
+  return ''
+})
+
 const cumpleRequisito = (requisito: string): boolean => {
   const texto = formularioPassword.passwordNueva
 
@@ -382,6 +512,16 @@ const irACategorias = async () => {
 const abrirModalPassword = () => {
   limpiarFormularioPassword()
   mostrarModalPassword.value = true
+}
+
+const abrirModalPerfil = async () => {
+  mostrarModalPerfil.value = true
+  await cargarPerfilUsuario()
+}
+
+const cerrarModalPerfil = () => {
+  if (guardandoPerfil.value) return
+  mostrarModalPerfil.value = false
 }
 
 const cerrarModalPassword = () => {
@@ -459,10 +599,59 @@ const cargarConfiguracionAlertas = async () => {
     cargandoAlertas.value = true
     const configuracion = await getConfiguracionUsuario()
     alertasActivas.value = configuracion.notificacionesActivas
+    notificacionesSoloCriticas.value = configuracion.notificacionesSoloCriticas ?? false
   } catch (error: any) {
     await mostrarToast(error?.message || 'No hemos podido cargar la configuración de avisos.', 'warning')
   } finally {
     cargandoAlertas.value = false
+  }
+}
+
+const cargarPerfilUsuario = async () => {
+  try {
+    cargandoPerfil.value = true
+    const perfil = await getPerfilUsuario()
+
+    formularioPerfil.email = perfil.email ?? ''
+    formularioPerfil.nombre = perfil.nombre ?? ''
+    formularioPerfil.apellidos = perfil.apellidos ?? ''
+    formularioPerfil.monedaPreferida = perfil.monedaPreferida ?? 'EUR'
+    formularioPerfil.idioma = perfil.idioma ?? 'es'
+  } catch (error: any) {
+    await mostrarToast(error?.message || 'No hemos podido cargar tu perfil.', 'warning')
+  } finally {
+    cargandoPerfil.value = false
+  }
+}
+
+const guardarPerfilUsuario = async () => {
+  if (mensajeValidacionPerfil.value) {
+    await mostrarToast(mensajeValidacionPerfil.value, 'warning')
+    return
+  }
+
+  try {
+    guardandoPerfil.value = true
+
+    const perfilActualizado = await actualizarPerfilUsuario({
+      nombre: formularioPerfil.nombre.trim(),
+      apellidos: formularioPerfil.apellidos.trim() || null,
+      monedaPreferida: formularioPerfil.monedaPreferida,
+      idioma: formularioPerfil.idioma
+    })
+
+    formularioPerfil.email = perfilActualizado.email ?? formularioPerfil.email
+    formularioPerfil.nombre = perfilActualizado.nombre ?? formularioPerfil.nombre
+    formularioPerfil.apellidos = perfilActualizado.apellidos ?? ''
+    formularioPerfil.monedaPreferida = perfilActualizado.monedaPreferida ?? formularioPerfil.monedaPreferida
+    formularioPerfil.idioma = perfilActualizado.idioma ?? formularioPerfil.idioma
+
+    cerrarModalPerfil()
+    await mostrarToast('Perfil actualizado correctamente.', 'success')
+  } catch (error: any) {
+    await mostrarToast(error?.message || 'No hemos podido guardar tu perfil.', 'danger')
+  } finally {
+    guardandoPerfil.value = false
   }
 }
 
@@ -473,8 +662,12 @@ const onToggleAlertas = async (event: CustomEvent) => {
 
   try {
     actualizandoAlertas.value = true
-    const resultado = await actualizarNotificacionesActivas(siguienteValor)
+    const resultado = await actualizarNotificacionesActivas(
+      siguienteValor,
+      notificacionesSoloCriticas.value
+    )
     alertasActivas.value = resultado.notificacionesActivas
+    notificacionesSoloCriticas.value = resultado.notificacionesSoloCriticas ?? false
 
     await mostrarToast(
       resultado.notificacionesActivas
@@ -490,8 +683,37 @@ const onToggleAlertas = async (event: CustomEvent) => {
   }
 }
 
+const onCambioModoAvisos = async (event: CustomEvent) => {
+  const siguienteModo = String((event.detail as { value?: string })?.value ?? 'todas')
+  const siguienteSoloCriticas = siguienteModo === 'solo-criticas'
+  const valorAnterior = notificacionesSoloCriticas.value
+  notificacionesSoloCriticas.value = siguienteSoloCriticas
+
+  try {
+    actualizandoAlertas.value = true
+    const resultado = await actualizarNotificacionesActivas(
+      alertasActivas.value,
+      siguienteSoloCriticas
+    )
+    alertasActivas.value = resultado.notificacionesActivas
+    notificacionesSoloCriticas.value = resultado.notificacionesSoloCriticas ?? false
+
+    await mostrarToast(
+      notificacionesSoloCriticas.value ? 'Modo de avisos: solo criticas.' : 'Modo de avisos: todas.',
+      'success'
+    )
+  } catch (error: any) {
+    notificacionesSoloCriticas.value = valorAnterior
+    await mostrarToast(error?.message || 'No hemos podido guardar el modo de avisos.', 'danger')
+  } finally {
+    actualizandoAlertas.value = false
+  }
+}
 onMounted(async () => {
-  await cargarConfiguracionAlertas()
+  await Promise.all([
+    cargarConfiguracionAlertas(),
+    cargarPerfilUsuario()
+  ])
 })
 </script>
 
@@ -621,6 +843,39 @@ onMounted(async () => {
   --handle-background-checked: #233f6b;
 }
 
+.profile-item {
+  --background: #f8f7f6;
+  --border-radius: 16px;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  --min-height: 74px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+}
+
+.profile-item:last-of-type {
+  margin-bottom: 10px;
+}
+
+.profile-validation-box {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(188, 56, 56, 0.1);
+  color: #8f2727;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.profile-save-button {
+  --background: #233f6b;
+  --background-activated: #1c3257;
+  --background-hover: #1c3257;
+  --border-radius: 16px;
+  min-height: 48px;
+  font-weight: 700;
+}
+
 .modal-header-shell,
 .modal-toolbar {
   --background: #ffffff;
@@ -687,3 +942,8 @@ onMounted(async () => {
   font-weight: 700;
 }
 </style>
+
+
+
+
+

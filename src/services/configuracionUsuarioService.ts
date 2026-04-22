@@ -5,6 +5,7 @@ const CONFIGURACION_USUARIO_API_URL = `${API_BASE_URL}/api/configuracion-usuario
 
 export interface ConfiguracionUsuarioResponse {
   notificacionesActivas: boolean
+  notificacionesSoloCriticas: boolean
 }
 
 export const getConfiguracionUsuario = async (): Promise<ConfiguracionUsuarioResponse> => {
@@ -22,12 +23,13 @@ export const getConfiguracionUsuario = async (): Promise<ConfiguracionUsuarioRes
 }
 
 export const actualizarNotificacionesActivas = async (
-  notificacionesActivas: boolean
+  notificacionesActivas: boolean,
+  notificacionesSoloCriticas?: boolean
 ): Promise<ConfiguracionUsuarioResponse> => {
   const response = await fetch(`${CONFIGURACION_USUARIO_API_URL}/notificaciones`, {
     method: 'PATCH',
     headers: crearHeadersAutenticacion(true),
-    body: JSON.stringify({ notificacionesActivas })
+    body: JSON.stringify({ notificacionesActivas, notificacionesSoloCriticas })
   })
 
   if (!response.ok) {

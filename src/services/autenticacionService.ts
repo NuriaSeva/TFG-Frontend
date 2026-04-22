@@ -148,6 +148,25 @@ export const guardarSesion = (respuesta: RespuestaAutenticacion) => {
   localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion))
 }
 
+export const actualizarSesionUsuario = (
+  cambios: Partial<Pick<SesionUsuario, 'nombre' | 'email'>>
+) => {
+  const sesion = obtenerSesion()
+  if (!sesion) return
+
+  if (sesionExpirada(sesion)) {
+    limpiarSesion()
+    return
+  }
+
+  const sesionActualizada: SesionUsuario = {
+    ...sesion,
+    ...cambios
+  }
+
+  localStorage.setItem(CLAVE_SESION, JSON.stringify(sesionActualizada))
+}
+
 export const obtenerSesion = (): SesionUsuario | null => {
   const raw = localStorage.getItem(CLAVE_SESION)
   if (!raw) return null

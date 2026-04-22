@@ -83,7 +83,7 @@
                   size="small"
                   fill="outline"
                   class="sync-mini-button"
-                  @click="confirmarSincronizacion"
+                  @click="sincronizarMovimientos"
                   :disabled="loading || sincronizando || desvinculando"
                 >
                   <ion-spinner v-if="sincronizando" name="crescent" />
@@ -165,8 +165,7 @@
           <section v-if="alertasActivasInicio" class="alerts-card finmind-card">
             <div class="alerts-header">
               <div>
-                <p class="section-eyebrow">Avisos</p>
-                <h2 class="section-title">Avisos del mes</h2>
+                <p>Avisos del mes</p>
               </div>
             </div>
 
@@ -203,10 +202,18 @@
                 <p>Últimos avisos detectados en tu cuenta</p>
               </div>
               <div class="alerts-modal-actions">
-                <button type="button" class="alerts-text-button" @click="marcarHistoricoComoLeido">
+                <button
+                  type="button"
+                  class="alerts-text-button alerts-text-button--primary"
+                  @click="marcarHistoricoComoLeido"
+                >
                   Marcar leídas
                 </button>
-                <button type="button" class="alerts-text-button" @click="cerrarCentroAlertas">
+                <button
+                  type="button"
+                  class="alerts-text-button alerts-text-button--secondary"
+                  @click="cerrarCentroAlertas"
+                >
                   Cerrar
                 </button>
               </div>
@@ -286,7 +293,6 @@ import {
 } from '@/services/dashboardService'
 import {
   getAlertas,
-  getAlertasNoLeidasTotal,
   marcarTodasAlertasLeidas,
   type AlertaResponse
 } from '@/services/alertaService'
@@ -493,7 +499,8 @@ const cargarAlertasProactivas = async () => {
   try {
     await getVisualizaciones()
     const response = await getAlertas(1, 12)
-    alertasProactivas.value = (response.items ?? []).map(a => ({
+    const alertasInicio = (response.items ?? []).filter(esAlertaParaInicio)
+    alertasProactivas.value = alertasInicio.map(a => ({
       tipo: String(a.tipo),
       severidad: a.tipo === 3 ? 'alta' : a.tipo === 1 ? 'media' : 'baja',
       titulo: a.titulo,
@@ -519,7 +526,10 @@ const cargarNoLeidas = async () => {
   }
 
   try {
-    totalAlertasNoLeidas.value = await getAlertasNoLeidasTotal()
+    const response = await getAlertas(1, 80)
+    totalAlertasNoLeidas.value = (response.items ?? [])
+      .filter(a => !a.leida && esAlertaParaInicio(a))
+      .length
   } catch {
     totalAlertasNoLeidas.value = 0
   }
@@ -540,7 +550,7 @@ const abrirCentroAlertas = async () => {
 
   try {
     const response = await getAlertas(1, 40)
-    historialAlertas.value = response.items ?? []
+    historialAlertas.value = (response.items ?? []).filter(esAlertaParaInicio)
   } catch {
     historialAlertas.value = []
   } finally {
@@ -572,6 +582,21 @@ const formatearFechaAlerta = (fechaIso: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+const esInsightIA = (alerta: AlertaResponse) => {
+  const titulo = (alerta.titulo ?? '').toLowerCase()
+  return (
+    titulo.includes('patrón') ||
+    titulo.includes('patron') ||
+    titulo.includes('ritmo de gasto')
+  )
+}
+
+const esAlertaParaInicio = (alerta: AlertaResponse) => {
+  // Mantenemos avisos no IA y cualquier aviso crítico (predicción tipo 3).
+  if (alerta.tipo === 3) return true
+  return !esInsightIA(alerta)
 }
 
 const etiquetaTipoAlerta = (alerta: AlertaResponse) => {
@@ -794,28 +819,6 @@ const desvincularCuenta = async () => {
   } finally {
     desvinculando.value = false
   }
-}
-
-const confirmarSincronizacion = async () => {
-  const alert = await alertController.create({
-    header: 'Sincronizar movimientos',
-    message:
-      'Se van a buscar nuevos movimientos bancarios. Este proceso puede tardar unos segundos. ¿Quieres continuar?',
-    buttons: [
-      {
-        text: 'Cancelar',
-        role: 'cancel'
-      },
-      {
-        text: 'Sincronizar',
-        handler: async () => {
-          await sincronizarMovimientos()
-        }
-      }
-    ]
-  })
-
-  await alert.present()
 }
 
 const confirmarDesvinculacion = async () => {
@@ -1330,6 +1333,33 @@ watch(
   font-size: 0.78rem;
   padding: 8px 10px;
   border-radius: 10px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+}
+
+.alerts-text-button--primary {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.alerts-text-button--secondary {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.alerts-text-button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.alerts-text-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.alerts-text-button--primary:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.alerts-text-button--secondary:active {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .alerts-modal-content {
@@ -1469,3 +1499,4 @@ ion-spinner {
   }
 }
 </style>
+

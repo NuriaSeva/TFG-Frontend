@@ -55,9 +55,10 @@ const emit = defineEmits<{
 const categoriaId = ref<string | null>(null)
 const importe = ref<number | null>(null)
 const tipo = ref<number>(2)
-const fecha = ref<string>(new Date().toISOString())
+const fecha = ref<string>('')
 const descripcion = ref<string>('')
 const moneda = ref<string>('EUR')
+const datetimeId = `selector-fecha-${Math.random().toString(36).slice(2, 9)}`
 
 const categorias = ref<Categoria[]>([])
 const cargandoCategorias = ref(false)
@@ -70,13 +71,42 @@ let sugerenciaRequestId = 0
 
 const mostrandoModalCategoria = ref(false)
 
-const obtenerFechaPorDefecto = () => new Date().toISOString()
+const obtenerFechaPorDefecto = () => {
+  const hoy = new Date()
+  const yyyy = hoy.getFullYear()
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0')
+  const dd = String(hoy.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const normalizarFechaParaSelector = (valor?: string | null) => {
+  if (!valor || valor.trim() === '') {
+    return obtenerFechaPorDefecto()
+  }
+
+  const limpio = valor.trim()
+
+  const coincideFechaSimple = /^(\d{4})-(\d{2})-(\d{2})$/.test(limpio)
+  if (coincideFechaSimple) {
+    return limpio
+  }
+
+  const parsed = new Date(limpio)
+  if (Number.isNaN(parsed.getTime())) {
+    return obtenerFechaPorDefecto()
+  }
+
+  const yyyy = parsed.getFullYear()
+  const mm = String(parsed.getMonth() + 1).padStart(2, '0')
+  const dd = String(parsed.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
 
 const aplicarMovimientoInicial = (value?: MovimientoFormulario | null) => {
   categoriaId.value = value?.categoriaId ?? null
   importe.value = value?.importe ?? null
   tipo.value = value?.tipo ?? 2
-  fecha.value = value?.fecha ?? obtenerFechaPorDefecto()
+  fecha.value = normalizarFechaParaSelector(value?.fecha)
   descripcion.value = value?.descripcion ?? ''
   moneda.value = value?.moneda ?? 'EUR'
 }
@@ -135,7 +165,7 @@ const puedeSugerirIA = computed(() => {
 const fechaFormateada = computed(() => {
   if (!fecha.value) return ''
 
-  const parsed = new Date(fecha.value)
+  const parsed = new Date(`${fecha.value}T00:00:00`)
   if (Number.isNaN(parsed.getTime())) return ''
 
   return parsed.toLocaleDateString('es-ES', {
@@ -355,7 +385,7 @@ const mostrarToast = async (
               </div>
             </div>
 
-            <ion-datetime-button datetime="selector-fecha" class="boton-fecha" />
+            <ion-datetime-button :datetime="datetimeId" class="boton-fecha" />
           </div>
 
           <ion-item class="item-formulario">
@@ -454,7 +484,7 @@ const mostrarToast = async (
 
       <ion-modal v-if="!props.soloCategoria" keep-contents-mounted>
         <ion-datetime
-          id="selector-fecha"
+          :id="datetimeId"
           v-model="fecha"
           presentation="date"
           locale="es-ES"

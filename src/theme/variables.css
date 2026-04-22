@@ -61,11 +61,11 @@ html[data-fm-text-size='normal'] {
 }
 
 html[data-fm-text-size='grande'] {
-  --fm-text-scale: 1.1;
+  --fm-text-scale: 1.15;
 }
 
 html[data-fm-text-size='muy-grande'] {
-  --fm-text-scale: 1.2;
+  --fm-text-scale: 1.3;
 }
 
 html {

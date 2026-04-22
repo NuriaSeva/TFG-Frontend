@@ -4,7 +4,7 @@
       <ion-router-outlet />
 
       <ion-tab-bar slot="bottom" class="custom-tab-bar">
-        <ion-tab-button tab="incio" href="/inicio">
+        <ion-tab-button tab="inicio" href="/inicio">
           <ion-icon :icon="homeOutline" />
           <ion-label>Inicio</ion-label>
         </ion-tab-button>
@@ -13,9 +13,15 @@
           <ion-icon :icon="swapHorizontalOutline" />
           <ion-label>Movimientos</ion-label>
         </ion-tab-button>
-            <ion-tab-button tab="graficos" href="/visualizaciones">
+
+        <ion-tab-button tab="graficos" href="/visualizaciones">
           <ion-icon :icon="pieChartOutline" />
           <ion-label>Gráficos</ion-label>
+        </ion-tab-button>
+
+        <ion-tab-button tab="informes" href="/informes">
+          <ion-icon :icon="analyticsOutline" />
+          <ion-label>Informes</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="ajustes" href="/ajustes">
@@ -41,7 +47,7 @@ import {
   homeOutline,
   swapHorizontalOutline,
   settingsOutline,
-  pieChartOutline 
+  pieChartOutline,
+  analyticsOutline
 } from 'ionicons/icons'
 </script>
-
