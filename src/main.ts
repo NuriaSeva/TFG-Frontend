@@ -30,8 +30,6 @@ const app = createApp(App)
 
 router.isReady().then(() => {
   CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
-    console.log('Deep link recibido:', url)
-
     if (!url) return
     if (!url.startsWith('finmind://callback')) return
 

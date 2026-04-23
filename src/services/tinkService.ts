@@ -13,16 +13,12 @@ export interface LoginUrlResponse {
 
 export const getLoginUrl = async (): Promise<LoginUrlResponse> => {
   const url = `${TINK_API_URL}/login-url`
-  console.log('URL login-url:', url)
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: crearHeadersAutenticacion()
     })
-
-    console.log('response status:', response.status)
-    console.log('response ok:', response.ok)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -31,7 +27,6 @@ export const getLoginUrl = async (): Promise<LoginUrlResponse> => {
     }
 
     const data = await response.json()
-    console.log('data login-url:', JSON.stringify(data))
     return data
   } catch (error: any) {
     console.error('fetch error completo:', error)
