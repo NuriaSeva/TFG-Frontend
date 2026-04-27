@@ -1,8 +1,7 @@
 <template>
   <ion-page>
-    <ion-tabs>
+    <ion-tabs v-if="!esAdmin">
       <ion-router-outlet />
-
       <ion-tab-bar slot="bottom" class="custom-tab-bar">
         <ion-tab-button tab="inicio" href="/inicio">
           <ion-icon :icon="homeOutline" />
@@ -30,6 +29,7 @@
         </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
+    <ion-router-outlet v-else />
   </ion-page>
 </template>
 
@@ -50,4 +50,8 @@ import {
   pieChartOutline,
   analyticsOutline
 } from 'ionicons/icons'
+import { computed } from 'vue'
+import { esUsuarioAdmin } from '@/services/autenticacionService'
+
+const esAdmin = computed(() => esUsuarioAdmin())
 </script>

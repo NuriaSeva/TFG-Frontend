@@ -23,6 +23,8 @@ export interface RespuestaAutenticacion {
   usuarioId: string
   nombre: string
   email: string
+  rol: string
+  debeCambiarPassword: boolean
   token: string
   expiracionToken: string
 }
@@ -33,6 +35,8 @@ export interface SesionUsuario {
   usuarioId: string
   nombre: string
   email: string
+  rol: string
+  debeCambiarPassword: boolean
   token: string
   expiracionToken: string
 }
@@ -141,6 +145,8 @@ export const guardarSesion = (respuesta: RespuestaAutenticacion) => {
     usuarioId: respuesta.usuarioId,
     nombre: respuesta.nombre,
     email: respuesta.email,
+    rol: respuesta.rol,
+    debeCambiarPassword: respuesta.debeCambiarPassword,
     token: respuesta.token,
     expiracionToken: respuesta.expiracionToken
   }
@@ -149,7 +155,7 @@ export const guardarSesion = (respuesta: RespuestaAutenticacion) => {
 }
 
 export const actualizarSesionUsuario = (
-  cambios: Partial<Pick<SesionUsuario, 'nombre' | 'email'>>
+  cambios: Partial<Pick<SesionUsuario, 'nombre' | 'email' | 'rol' | 'debeCambiarPassword'>>
 ) => {
   const sesion = obtenerSesion()
   if (!sesion) return
@@ -205,6 +211,20 @@ export const obtenerUsuarioSesion = (): SesionUsuario | null => {
 
 export const estaAutenticado = (): boolean => {
   return !!obtenerToken()
+}
+
+export const esUsuarioAdmin = (): boolean => {
+  const sesion = obtenerUsuarioSesion()
+  if (!sesion) return false
+
+  return (sesion.rol ?? '').toLowerCase() === 'admin'
+}
+
+export const requiereCambioPassword = (): boolean => {
+  const sesion = obtenerUsuarioSesion()
+  if (!sesion) return false
+
+  return sesion.debeCambiarPassword === true
 }
 
 export const limpiarSesion = () => {

@@ -10,6 +10,7 @@ export interface PerfilUsuarioResponse {
   apellidos: string | null
   monedaPreferida: string
   idioma: string
+  rol: string
 }
 
 export interface ActualizarPerfilUsuarioRequest {
@@ -51,7 +52,8 @@ export const actualizarPerfilUsuario = async (
 
   actualizarSesionUsuario({
     nombre: perfilActualizado.nombre,
-    email: perfilActualizado.email
+    email: perfilActualizado.email,
+    rol: perfilActualizado.rol
   })
 
   return perfilActualizado

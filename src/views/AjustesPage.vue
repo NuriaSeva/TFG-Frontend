@@ -72,6 +72,23 @@
             </div>
           </section>
 
+          <section v-if="esAdmin" class="settings-section">
+            <h2 class="section-title">Administración</h2>
+
+            <div class="settings-list">
+              <button class="settings-row" type="button" @click="irAPanelAdmin">
+                <div class="settings-row-left">
+                  <div class="settings-icon settings-icon-security">
+                    <ion-icon :icon="shieldCheckmarkOutline" />
+                  </div>
+                  <span class="settings-row-title">Panel admin</span>
+                </div>
+
+                <ion-icon :icon="chevronForwardOutline" class="settings-arrow" />
+              </button>
+            </div>
+          </section>
+
           <section class="settings-section">
             <h2 class="section-title">Accesibilidad</h2>
 
@@ -354,7 +371,8 @@ import {
   personOutline,
   textOutline,
   removeCircleOutline,
-  eyeOutline
+  eyeOutline,
+  shieldCheckmarkOutline
 } from 'ionicons/icons'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -362,6 +380,7 @@ import {
   REQUISITOS_PASSWORD,
   cambiarPassword,
   cerrarSesion,
+  esUsuarioAdmin,
   validarPasswordSegura
 } from '@/services/autenticacionService'
 import {
@@ -425,6 +444,8 @@ const altoContraste = computed<boolean>({
 const modoAvisos = computed<'todas' | 'solo-criticas'>(() =>
   notificacionesSoloCriticas.value ? 'solo-criticas' : 'todas'
 )
+
+const esAdmin = computed(() => esUsuarioAdmin())
 
 const mensajeValidacionPassword = computed(() => {
   if (!formularioPassword.passwordActual && !formularioPassword.passwordNueva && !formularioPassword.repetirPasswordNueva) {
@@ -507,6 +528,10 @@ const cumpleRequisito = (requisito: string): boolean => {
 
 const irACategorias = async () => {
   await router.push('/ajustes/categorias')
+}
+
+const irAPanelAdmin = async () => {
+  await router.push('/admin')
 }
 
 const abrirModalPassword = () => {

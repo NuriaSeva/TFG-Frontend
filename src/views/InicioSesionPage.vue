@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -8,6 +8,7 @@ import {
   IonButton,
   IonText,
   IonSpinner,
+  alertController,
   toastController
 } from '@ionic/vue'
 import { iniciarSesion, guardarSesion } from '@/services/autenticacionService'
@@ -24,6 +25,16 @@ const formularioValido = computed(() => {
 
 const irARegistro = async () => {
   await router.push('/registro')
+}
+
+const onOlvidePassword = async () => {
+  const alert = await alertController.create({
+    header: 'Recuperar acceso',
+    message: 'Contacta con soporte o con un administrador para generar una contrasena temporal.',
+    buttons: ['Entendido']
+  })
+
+  await alert.present()
 }
 
 const onIniciarSesion = async () => {
@@ -46,10 +57,16 @@ const onIniciarSesion = async () => {
     })
 
     await toast.present()
-    await router.replace('/inicio')
+
+    if (respuesta.debeCambiarPassword) {
+      await router.replace('/cambiar-password-obligatorio')
+      return
+    }
+
+    await router.replace((respuesta.rol ?? '').toLowerCase() === 'admin' ? '/admin' : '/inicio')
   } catch (error: any) {
     const toast = await toastController.create({
-      message: error?.message || 'No se pudo iniciar sesión.',
+      message: error?.message || 'No se pudo iniciar sesion.',
       duration: 2500,
       position: 'bottom',
       color: 'danger'
@@ -80,7 +97,7 @@ const onIniciarSesion = async () => {
               type="email"
               fill="outline"
               label-placement="stacked"
-              placeholder="Correo electrónico"
+              placeholder="Correo electronico"
               class="campo"
             />
 
@@ -89,7 +106,7 @@ const onIniciarSesion = async () => {
               type="password"
               fill="outline"
               label-placement="stacked"
-              placeholder="Contraseña"
+              placeholder="Contrasena"
               class="campo"
             />
 
@@ -99,18 +116,16 @@ const onIniciarSesion = async () => {
               :disabled="!formularioValido || cargando"
               @click="onIniciarSesion"
             >
-              <template v-if="!cargando">
-                Iniciar sesión
-              </template>
-              <template v-else>
-                <ion-spinner name="crescent" />
-              </template>
+              <template v-if="!cargando">Iniciar sesion</template>
+              <template v-else><ion-spinner name="crescent" /></template>
             </ion-button>
 
+            <button type="button" class="enlace-texto enlace-password" @click="onOlvidePassword">
+              He olvidado mi contrasena
+            </button>
+
             <div class="pie-formulario">
-              <ion-text color="medium">
-                ¿No tienes una cuenta?
-              </ion-text>
+              <ion-text color="medium">No tienes una cuenta?</ion-text>
               <button type="button" class="enlace-texto" @click="irARegistro">
                 Crear una cuenta
               </button>
@@ -152,5 +167,12 @@ const onIniciarSesion = async () => {
 
 .enlace-texto {
   color: var(--finmind-color-accent);
+}
+
+.enlace-password {
+  display: block;
+  margin: 10px auto 0;
+  text-align: center;
+  font-size: 0.9rem;
 }
 </style>
