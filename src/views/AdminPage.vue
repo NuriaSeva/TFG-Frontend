@@ -96,7 +96,7 @@
                     @click="onResetearPassword(usuario)"
                   >
                     <ion-icon :icon="keyOutline" />
-                    Restablecer contrasena
+                    Restablecer contraseña
                   </button>
                 </article>
 
@@ -124,7 +124,7 @@
 
           <template v-else>
             <section class="admin-section">
-              <h3 class="section-title">Resumen tecnico</h3>
+              <h3 class="section-title">Estado actual de los recursos</h3>
 
               <div class="health-grid">
                 <article class="health-card">
@@ -151,6 +151,50 @@
                   <p class="health-value">{{ formatearBytes(health?.baseDeDatos?.tamanoBytes ?? null) }}</p>
                 </article>
               </div>
+            </section>
+
+            <section class="admin-section">
+              <h3 class="section-title">Modelo de prediccion</h3>
+
+              <div class="health-grid">
+                <article class="health-card">
+                  <p class="health-label">Dataset</p>
+                  <p class="health-value" :class="health?.modeloPrediccionGasto?.datasetDisponible ? 'health-value-ok' : 'health-value-bad'">
+                    {{ health?.modeloPrediccionGasto?.datasetDisponible ? 'Disponible' : 'No disponible' }}
+                  </p>
+                </article>
+
+                <article class="health-card">
+                  <p class="health-label">Modelo</p>
+                  <p class="health-value" :class="health?.modeloPrediccionGasto?.modeloDisponible ? 'health-value-ok' : 'health-value-bad'">
+                    {{ health?.modeloPrediccionGasto?.modeloDisponible ? 'Entrenado' : 'Pendiente' }}
+                  </p>
+                </article>
+
+                <article class="health-card">
+                  <p class="health-label">MAE</p>
+                  <p class="health-value">{{ formatearNumero(health?.modeloPrediccionGasto?.mae) }}</p>
+                </article>
+
+                <article class="health-card">
+                  <p class="health-label">RMSE</p>
+                  <p class="health-value">{{ formatearNumero(health?.modeloPrediccionGasto?.rmse) }}</p>
+                </article>
+
+                <article class="health-card">
+                  <p class="health-label">R2</p>
+                  <p class="health-value">{{ formatearNumero(health?.modeloPrediccionGasto?.r2, 4) }}</p>
+                </article>
+
+                <article class="health-card">
+                  <p class="health-label">Registros</p>
+                  <p class="health-value">{{ health?.modeloPrediccionGasto?.registrosDataset ?? '-' }}</p>
+                </article>
+              </div>
+
+              <p class="model-note">
+                {{ health?.modeloPrediccionGasto?.mensaje ?? 'Sin informacion del modelo.' }}
+              </p>
             </section>
 
             <section class="admin-section charts-section">
@@ -402,8 +446,8 @@ const ejecutarCambioRol = async (usuario: AdminUsuarioResumen, rol: 'User' | 'Ad
 
 const onResetearPassword = async (usuario: AdminUsuarioResumen) => {
   const alert = await alertController.create({
-    header: 'Resetear contrasena',
-    message: `Se generara una contrasena temporal para ${usuario.email}.`,
+    header: 'Resetear contraseña',
+    message: `Se generara una contraseña temporal para ${usuario.email}.`,
     buttons: [
       { text: 'Cancelar', role: 'cancel' },
       {
@@ -425,15 +469,15 @@ const ejecutarReseteoPassword = async (usuario: AdminUsuarioResumen) => {
     const response = await resetearPasswordUsuarioAdmin(usuario.id)
 
     const alert = await alertController.create({
-      header: 'Contrasena temporal generada',
+      header: 'contraseña temporal generada',
       cssClass: 'admin-password-alert',
-      message: `Usuario: ${usuario.email}\n\nContrasena temporal: ${response.passwordTemporal}`,
+      message: `Usuario: ${usuario.email}\n\ncontraseña temporal: ${response.passwordTemporal}`,
       buttons: ['Cerrar']
     })
 
     await alert.present()
   } catch (error: any) {
-    await mostrarToast(error?.message || 'No hemos podido resetear la contrasena.', 'danger')
+    await mostrarToast(error?.message || 'No hemos podido resetear la contraseña.', 'danger')
   } finally {
     actualizandoUsuarioId.value = null
   }
@@ -460,6 +504,11 @@ const formatearBytes = (valor: number | null | undefined): string => {
   return `${numero.toFixed(numero >= 10 || indice === 0 ? 0 : 1)} ${unidades[indice]}`
 }
 
+const formatearNumero = (valor: number | null | undefined, decimales = 2): string => {
+  if (valor == null || Number.isNaN(valor)) return '-'
+  return valor.toFixed(decimales)
+}
+
 const mostrarToast = async (
   message: string,
   color: 'success' | 'danger' | 'warning' = 'success'
@@ -477,7 +526,7 @@ const mostrarToast = async (
 const onCerrarSesion = async () => {
   const alert = await alertController.create({
     header: 'Cerrar sesion',
-    message: 'Quieres cerrar la sesion actual?',
+    message: 'Quieres cerrar la sesión actual?',
     buttons: [
       { text: 'Cancelar', role: 'cancel' },
       {
@@ -513,7 +562,7 @@ onMounted(async () => {
 .admin-wrapper {
   width: 100%;
   max-width: 430px;
-  padding: 12px 14px 28px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -792,6 +841,12 @@ onMounted(async () => {
   color: #4f637f;
   font-size: 0.78rem;
   word-break: break-word;
+}
+
+.model-note {
+  margin: 0;
+  color: #60728b;
+  font-size: 0.78rem;
 }
 
 .charts-section {

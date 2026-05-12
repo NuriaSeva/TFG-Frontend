@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -7,9 +7,11 @@ import {
   IonInput,
   IonButton,
   IonText,
+  IonIcon,
   IonSpinner,
   toastController
 } from '@ionic/vue'
+import { eyeOffOutline, eyeOutline } from 'ionicons/icons'
 import {
   REQUISITOS_PASSWORD,
   registrarUsuario,
@@ -24,6 +26,8 @@ const apellidos = ref('')
 const email = ref('')
 const password = ref('')
 const repetirPassword = ref('')
+const mostrarPassword = ref(false)
+const mostrarRepetirPassword = ref(false)
 const cargando = ref(false)
 
 const erroresPassword = computed(() => {
@@ -52,21 +56,15 @@ const formularioValido = computed(() => {
 
 const cumpleRequisito = (requisito: string): boolean => {
   const texto = password.value
+  const regla = requisito.toLowerCase()
 
-  switch (requisito) {
-    case 'Al menos 8 caracteres':
-      return texto.length >= 8
-    case 'Una letra mayúscula':
-      return /[A-ZÁÉÍÓÚÜÑ]/.test(texto)
-    case 'Una letra minúscula':
-      return /[a-záéíóúüñ]/.test(texto)
-    case 'Un número':
-      return /\d/.test(texto)
-    case 'Un carácter especial':
-      return /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(texto)
-    default:
-      return false
-  }
+  if (regla.includes('8')) return texto.length >= 8
+  if (regla.includes('may')) return /[A-Z]/.test(texto)
+  if (regla.includes('min')) return /[a-z]/.test(texto)
+  if (regla.includes('num')) return /\d/.test(texto)
+  if (regla.includes('especial')) return /[^A-Za-z0-9]/.test(texto)
+
+  return false
 }
 
 const irAInicioSesion = async () => {
@@ -118,7 +116,6 @@ const onRegistrar = async () => {
         <section class="cabecera">
           <div class="marca">
             <h1>Crear cuenta</h1>
-            <p>Empieza a organizar tus finanzas desde el móvil</p>
           </div>
         </section>
 
@@ -148,13 +145,23 @@ const onRegistrar = async () => {
               class="campo"
             />
 
-            <ion-input
-              v-model="password"
-              type="password"
-              fill="outline"
-              placeholder="Contraseña"
-              class="campo"
-            />
+            <div class="campo-password">
+              <ion-input
+                v-model="password"
+                :type="mostrarPassword ? 'text' : 'password'"
+                fill="outline"
+                placeholder="contraseña"
+                class="campo"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                @click.stop="mostrarPassword = !mostrarPassword"
+              >
+                <ion-icon :icon="mostrarPassword ? eyeOffOutline : eyeOutline" />
+              </button>
+            </div>
 
             <div v-if="password" class="password-box">
               <p class="password-box-title">La contraseña debe incluir:</p>
@@ -169,13 +176,23 @@ const onRegistrar = async () => {
               </ul>
             </div>
 
-            <ion-input
-              v-model="repetirPassword"
-              type="password"
-              fill="outline"
-              placeholder="Repetir contraseña"
-              class="campo"
-            />
+            <div class="campo-password">
+              <ion-input
+                v-model="repetirPassword"
+                :type="mostrarRepetirPassword ? 'text' : 'password'"
+                fill="outline"
+                placeholder="Repetir contraseña"
+                class="campo"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="mostrarRepetirPassword ? 'Ocultar repeticion de contraseña' : 'Mostrar repeticion de contraseña'"
+                @click.stop="mostrarRepetirPassword = !mostrarRepetirPassword"
+              >
+                <ion-icon :icon="mostrarRepetirPassword ? eyeOffOutline : eyeOutline" />
+              </button>
+            </div>
 
             <ion-text
               v-if="password && !passwordSegura"
@@ -238,6 +255,35 @@ const onRegistrar = async () => {
   padding: 26px 22px 36px;
 }
 
+.campo-password {
+  position: relative;
+}
+
+.campo-password .campo {
+  --padding-end: 44px;
+  margin-bottom: 14px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #46658f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
 .password-box {
   background: #ffffff;
   border: 1px solid rgba(36, 58, 94, 0.12);
@@ -271,8 +317,8 @@ const onRegistrar = async () => {
 }
 
 .password-rules-list li::before {
-  content: '•';
-  font-size: 1rem;
+  content: '*';
+  font-size: 0.95rem;
 }
 
 .password-rules-list li.cumplido {

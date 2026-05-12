@@ -356,8 +356,7 @@ const mostrarToast = async (
       <ion-toolbar class="custom-toolbar">
         <div class="topbar">
           <div>
-            <h1 class="topbar-title">Categorías</h1>
-            <p class="topbar-subtitle">Gestiona ingresos y gastos</p>
+            <h1 class="topbar-title">Gestión de Categorías</h1>
           </div>
 
           <button

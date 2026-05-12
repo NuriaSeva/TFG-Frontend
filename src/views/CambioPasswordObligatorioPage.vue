@@ -11,37 +11,67 @@
         <section class="forced-wrapper">
           <article class="forced-card">
             <p class="forced-subtitle">
-              Debes actualizar tu contrasena temporal para continuar.
+              Debes actualizar tu contraseña temporal para continuar.
             </p>
 
-            <ion-input
-              v-model="passwordActual"
-              type="password"
-              fill="outline"
-              label-placement="stacked"
-              placeholder="Contrasena actual (temporal)"
-              class="campo"
-            />
+            <div class="campo-password">
+              <ion-input
+                v-model="passwordActual"
+                :type="mostrarPasswordActual ? 'text' : 'password'"
+                fill="outline"
+                label-placement="stacked"
+                placeholder="contraseña actual (temporal)"
+                class="campo"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="mostrarPasswordActual ? 'Ocultar contraseña actual' : 'Mostrar contraseña actual'"
+                @click.stop="mostrarPasswordActual = !mostrarPasswordActual"
+              >
+                <ion-icon :icon="mostrarPasswordActual ? eyeOffOutline : eyeOutline" />
+              </button>
+            </div>
 
-            <ion-input
-              v-model="passwordNueva"
-              type="password"
-              fill="outline"
-              label-placement="stacked"
-              placeholder="Nueva contrasena"
-              class="campo"
-            />
+            <div class="campo-password">
+              <ion-input
+                v-model="passwordNueva"
+                :type="mostrarPasswordNueva ? 'text' : 'password'"
+                fill="outline"
+                label-placement="stacked"
+                placeholder="Nueva contraseña"
+                class="campo"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="mostrarPasswordNueva ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'"
+                @click.stop="mostrarPasswordNueva = !mostrarPasswordNueva"
+              >
+                <ion-icon :icon="mostrarPasswordNueva ? eyeOffOutline : eyeOutline" />
+              </button>
+            </div>
 
-            <ion-input
-              v-model="passwordNueva2"
-              type="password"
-              fill="outline"
-              label-placement="stacked"
-              placeholder="Repetir nueva contrasena"
-              class="campo"
-            />
+            <div class="campo-password">
+              <ion-input
+                v-model="passwordNueva2"
+                :type="mostrarPasswordNueva2 ? 'text' : 'password'"
+                fill="outline"
+                label-placement="stacked"
+                placeholder="Repetir nueva contraseña"
+                class="campo"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="mostrarPasswordNueva2 ? 'Ocultar repetición de contraseña' : 'Mostrar repetición de contraseña'"
+                @click.stop="mostrarPasswordNueva2 = !mostrarPasswordNueva2"
+              >
+                <ion-icon :icon="mostrarPasswordNueva2 ? eyeOffOutline : eyeOutline" />
+              </button>
+            </div>
 
-            <ul class="password-rules-list" aria-label="Requisitos de la nueva contrasena">
+            <ul class="password-rules-list" aria-label="Requisitos de la nueva contraseña">
               <li
                 v-for="requisito in REQUISITOS_PASSWORD"
                 :key="requisito"
@@ -82,9 +112,11 @@ import {
   IonContent,
   IonInput,
   IonButton,
+  IonIcon,
   IonSpinner,
   toastController
 } from '@ionic/vue'
+import { eyeOffOutline, eyeOutline } from 'ionicons/icons'
 import {
   REQUISITOS_PASSWORD,
   cambiarPassword,
@@ -96,6 +128,9 @@ const router = useRouter()
 const passwordActual = ref('')
 const passwordNueva = ref('')
 const passwordNueva2 = ref('')
+const mostrarPasswordActual = ref(false)
+const mostrarPasswordNueva = ref(false)
+const mostrarPasswordNueva2 = ref(false)
 const cargando = ref(false)
 
 const mensajeValidacionPassword = computed(() => {
@@ -104,11 +139,11 @@ const mensajeValidacionPassword = computed(() => {
   }
 
   if (!passwordActual.value) {
-    return 'Debes indicar tu contrasena actual.'
+    return 'Debes indicar tu contraseña actual.'
   }
 
   if (!passwordNueva.value) {
-    return 'Debes introducir una nueva contrasena.'
+    return 'Debes introducir una nueva contraseña.'
   }
 
   const erroresPassword = validarPasswordSegura(passwordNueva.value)
@@ -117,15 +152,15 @@ const mensajeValidacionPassword = computed(() => {
   }
 
   if (passwordNueva.value === passwordActual.value) {
-    return 'La nueva contrasena no puede ser igual a la actual.'
+    return 'La nueva contraseña no puede ser igual a la actual.'
   }
 
   if (!passwordNueva2.value) {
-    return 'Debes repetir la nueva contrasena.'
+    return 'Debes repetir la nueva contraseña.'
   }
 
   if (passwordNueva.value !== passwordNueva2.value) {
-    return 'La nueva contrasena y su repeticion no coinciden.'
+    return 'La nueva contraseña y su repeticion no coinciden.'
   }
 
   return ''
@@ -163,7 +198,7 @@ const onCambiarPassword = async () => {
     await cerrarSesion()
 
     const toast = await toastController.create({
-      message: 'Contrasena actualizada. Inicia sesion de nuevo.',
+      message: 'contraseña actualizada. Inicia sesión de nuevo.',
       duration: 2200,
       position: 'bottom',
       color: 'success'
@@ -173,7 +208,7 @@ const onCambiarPassword = async () => {
     await router.replace('/inicio-sesion')
   } catch (error: any) {
     const toast = await toastController.create({
-      message: error?.message || 'No se pudo actualizar la contrasena.',
+      message: error?.message || 'No se pudo actualizar la contraseña.',
       duration: 2600,
       position: 'bottom',
       color: 'danger'
@@ -219,6 +254,35 @@ const onCambiarPassword = async () => {
 
 .campo {
   margin-bottom: 12px;
+}
+
+.campo-password {
+  position: relative;
+}
+
+.campo-password .campo {
+  --padding-end: 44px;
+  margin-bottom: 12px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #46658f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .password-rules-list {

@@ -460,7 +460,6 @@ const heatmapOptions = computed<any>(() => {
         <div class="topbar">
           <div>
             <h1 class="topbar-title">Visualizaciones</h1>
-            <p class="topbar-subtitle">Gráficos y comparativas de tus finanzas</p>
           </div>
 
           <button

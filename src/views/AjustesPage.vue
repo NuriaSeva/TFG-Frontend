@@ -5,7 +5,6 @@
         <div class="topbar">
           <div>
             <h1 class="topbar-title">Ajustes</h1>
-            <p class="topbar-subtitle">Preferencias y seguridad</p>
           </div>
 
           <div class="header-spacer" aria-hidden="true"></div>
@@ -73,7 +72,7 @@
           </section>
 
           <section v-if="esAdmin" class="settings-section">
-            <h2 class="section-title">Administración</h2>
+            <h2 class="section-title">AdministraciÃ³n</h2>
 
             <div class="settings-list">
               <button class="settings-row" type="button" @click="irAPanelAdmin">
@@ -167,7 +166,7 @@
                 <ion-toggle
                   :checked="alertasActivas"
                   class="settings-toggle"
-                  aria-label="Activar alertas automáticas"
+                  aria-label="Activar alertas automÃ¡ticas"
                   :disabled="cargandoAlertas || actualizandoAlertas"
                   @ionChange="onToggleAlertas"
                 />
@@ -214,30 +213,54 @@
           <div class="password-modal-body">
             <div class="password-form-card">
               <ion-item lines="none" class="password-item">
-                <ion-label position="stacked">Contraseña actual</ion-label>
+                <ion-label position="stacked">contraseña actual</ion-label>
                 <ion-input
                   v-model="formularioPassword.passwordActual"
-                  type="password"
+                  :type="mostrarPasswordActual ? 'text' : 'password'"
                   placeholder="Introduce tu contraseña actual"
                 />
+                <button
+                  type="button"
+                  class="password-toggle-inline"
+                  :aria-label="mostrarPasswordActual ? 'Ocultar contraseña actual' : 'Mostrar contraseña actual'"
+                  @click.stop="mostrarPasswordActual = !mostrarPasswordActual"
+                >
+                  <ion-icon :icon="mostrarPasswordActual ? eyeOffOutline : eyeOutline" />
+                </button>
               </ion-item>
 
               <ion-item lines="none" class="password-item">
                 <ion-label position="stacked">Nueva contraseña</ion-label>
                 <ion-input
                   v-model="formularioPassword.passwordNueva"
-                  type="password"
+                  :type="mostrarPasswordNueva ? 'text' : 'password'"
                   placeholder="Introduce la nueva contraseña"
                 />
+                <button
+                  type="button"
+                  class="password-toggle-inline"
+                  :aria-label="mostrarPasswordNueva ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'"
+                  @click.stop="mostrarPasswordNueva = !mostrarPasswordNueva"
+                >
+                  <ion-icon :icon="mostrarPasswordNueva ? eyeOffOutline : eyeOutline" />
+                </button>
               </ion-item>
 
               <ion-item lines="none" class="password-item">
                 <ion-label position="stacked">Repetir nueva contraseña</ion-label>
                 <ion-input
                   v-model="formularioPassword.repetirPasswordNueva"
-                  type="password"
+                  :type="mostrarPasswordRepetida ? 'text' : 'password'"
                   placeholder="Repite la nueva contraseña"
                 />
+                <button
+                  type="button"
+                  class="password-toggle-inline"
+                  :aria-label="mostrarPasswordRepetida ? 'Ocultar repeticion de contraseña' : 'Mostrar repeticion de contraseña'"
+                  @click.stop="mostrarPasswordRepetida = !mostrarPasswordRepetida"
+                >
+                  <ion-icon :icon="mostrarPasswordRepetida ? eyeOffOutline : eyeOutline" />
+                </button>
               </ion-item>
 
               <ul class="password-rules-list" aria-label="Requisitos de la nueva contraseña">
@@ -280,7 +303,7 @@
           <div class="password-modal-body">
             <div class="password-form-card">
               <ion-item lines="none" class="profile-item">
-                <ion-label position="stacked">Correo electronico</ion-label>
+                <ion-label position="stacked">Correo electrónico</ion-label>
                 <ion-input
                   :value="formularioPerfil.email"
                   readonly
@@ -303,19 +326,6 @@
                   placeholder="Tus apellidos"
                   :disabled="cargandoPerfil || guardandoPerfil"
                 />
-              </ion-item>
-              <ion-item lines="none" class="profile-item">
-                <ion-label position="stacked">Moneda preferida</ion-label>
-                <ion-select
-                  v-model="formularioPerfil.monedaPreferida"
-                  interface="popover"
-                  aria-label="Seleccionar moneda preferida"
-                  :disabled="cargandoPerfil || guardandoPerfil"
-                >
-                  <ion-select-option value="EUR">Euro (EUR)</ion-select-option>
-                  <ion-select-option value="USD">Dolar estadounidense (USD)</ion-select-option>
-                  <ion-select-option value="GBP">Libra esterlina (GBP)</ion-select-option>
-                </ion-select>
               </ion-item>
               <div v-if="mensajeValidacionPerfil" class="profile-validation-box">
                 {{ mensajeValidacionPerfil }}
@@ -372,6 +382,7 @@ import {
   textOutline,
   removeCircleOutline,
   eyeOutline,
+  eyeOffOutline,
   shieldCheckmarkOutline
 } from 'ionicons/icons'
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -400,6 +411,9 @@ const router = useRouter()
 const mostrarModalPassword = ref(false)
 const mostrarModalPerfil = ref(false)
 const guardandoPassword = ref(false)
+const mostrarPasswordActual = ref(false)
+const mostrarPasswordNueva = ref(false)
+const mostrarPasswordRepetida = ref(false)
 const alertasActivas = ref(true)
 const notificacionesSoloCriticas = ref(false)
 const cargandoAlertas = ref(false)
@@ -474,7 +488,7 @@ const mensajeValidacionPassword = computed(() => {
   }
 
   if (formularioPassword.passwordNueva !== formularioPassword.repetirPasswordNueva) {
-    return 'La nueva contraseña y su repetición no coinciden.'
+    return 'La nueva contraseña y su repeticiÃ³n no coinciden.'
   }
 
   return ''
@@ -500,10 +514,6 @@ const mensajeValidacionPerfil = computed(() => {
     return 'Los apellidos no pueden superar los 120 caracteres.'
   }
 
-  if (!formularioPerfil.monedaPreferida) {
-    return 'Selecciona una moneda preferida.'
-  }
-
   return ''
 })
 
@@ -513,14 +523,14 @@ const cumpleRequisito = (requisito: string): boolean => {
   switch (requisito) {
     case 'Al menos 8 caracteres':
       return texto.length >= 8
-    case 'Una letra mayúscula':
-      return /[A-ZÁÉÍÓÚÜÑ]/.test(texto)
-    case 'Una letra minúscula':
-      return /[a-záéíóúüñ]/.test(texto)
-    case 'Un número':
+    case 'Una letra mayÃºscula':
+      return /[A-ZÃÃ‰ÃÃ“ÃšÃœÃ‘]/.test(texto)
+    case 'Una letra minÃºscula':
+      return /[a-zÃ¡Ã©Ã­Ã³ÃºÃ¼Ã±]/.test(texto)
+    case 'Un nÃºmero':
       return /\d/.test(texto)
-    case 'Un carácter especial':
-      return /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(texto)
+    case 'Un carÃ¡cter especial':
+      return /[^A-Za-zÃÃ‰ÃÃ“ÃšÃœÃ‘Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±0-9]/.test(texto)
     default:
       return false
   }
@@ -559,6 +569,9 @@ const limpiarFormularioPassword = () => {
   formularioPassword.passwordActual = ''
   formularioPassword.passwordNueva = ''
   formularioPassword.repetirPasswordNueva = ''
+  mostrarPasswordActual.value = false
+  mostrarPasswordNueva.value = false
+  mostrarPasswordRepetida.value = false
 }
 
 const mostrarToast = async (message: string, color: 'success' | 'danger' | 'warning' = 'success') => {
@@ -587,7 +600,7 @@ const guardarNuevaPassword = async () => {
     })
 
     cerrarModalPassword()
-    await mostrarToast('Contraseña actualizada correctamente.', 'success')
+    await mostrarToast('contraseña actualizada correctamente.', 'success')
   } catch (error: any) {
     await mostrarToast(error?.message || 'No hemos podido cambiar la contraseña.', 'danger')
   } finally {
@@ -925,6 +938,31 @@ onMounted(async () => {
   --min-height: 74px;
   margin-bottom: 12px;
   border-radius: 16px;
+  position: relative;
+}
+
+.password-item ion-input {
+  --padding-end: 40px;
+}
+
+.password-toggle-inline {
+  position: absolute;
+  right: 12px;
+  top: 44px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #46658f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .password-rules-list {

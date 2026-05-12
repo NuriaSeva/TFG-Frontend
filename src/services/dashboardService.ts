@@ -66,6 +66,13 @@ const construirQuery = (params?: FiltroDashboardParams) => {
   return queryString ? `?${queryString}` : ''
 }
 
+const crearSignalTimeout = (timeoutMs: number) => {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
+
+  return { signal: controller.signal, clear: () => window.clearTimeout(timeoutId) }
+}
+
 export const getResumenMesActual = async (
   params?: FiltroDashboardParams
 ): Promise<DashboardResumenResponse> => {
@@ -85,17 +92,24 @@ export const getResumenMesActual = async (
 export const getVisualizaciones = async (
   params?: FiltroDashboardParams
 ): Promise<DashboardVisualizacionesResponse> => {
-  const response = await fetch(`${DASHBOARD_API_URL}/visualizaciones${construirQuery(params)}`, {
-    method: 'GET',
-    headers: crearHeadersAutenticacion()
-  })
+  const timeout = crearSignalTimeout(12000)
 
-  if (!response.ok) {
-    const errorText = (await response.text()).trim()
-    throw new Error(errorText || 'No hemos podido cargar las visualizaciones.')
+  try {
+    const response = await fetch(`${DASHBOARD_API_URL}/visualizaciones${construirQuery(params)}`, {
+      method: 'GET',
+      headers: crearHeadersAutenticacion(),
+      signal: timeout.signal
+    })
+
+    if (!response.ok) {
+      const errorText = (await response.text()).trim()
+      throw new Error(errorText || 'No hemos podido cargar las visualizaciones.')
+    }
+
+    return await response.json()
+  } finally {
+    timeout.clear()
   }
-
-  return await response.json()
 }
 
 export const getMapaCalorMesActual = async (

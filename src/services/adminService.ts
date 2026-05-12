@@ -37,6 +37,16 @@ export interface AdminHealthResponse {
     disponibleBytes: number
     porcentajeLibre: number
   }
+  modeloPrediccionGasto: {
+    datasetDisponible: boolean
+    modeloDisponible: boolean
+    registrosDataset: number
+    mae: number | null
+    rmse: number | null
+    r2: number | null
+    fechaModeloUtc: string | null
+    mensaje: string | null
+  }
 }
 
 export interface AdminResetPasswordResponse {

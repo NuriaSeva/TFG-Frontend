@@ -7,16 +7,19 @@ import {
   IonInput,
   IonButton,
   IonText,
+  IonIcon,
   IonSpinner,
   alertController,
   toastController
 } from '@ionic/vue'
+import { eyeOffOutline, eyeOutline } from 'ionicons/icons'
 import { iniciarSesion, guardarSesion } from '@/services/autenticacionService'
 
 const router = useRouter()
 
 const email = ref('')
 const password = ref('')
+const mostrarPassword = ref(false)
 const cargando = ref(false)
 
 const formularioValido = computed(() => {
@@ -30,7 +33,7 @@ const irARegistro = async () => {
 const onOlvidePassword = async () => {
   const alert = await alertController.create({
     header: 'Recuperar acceso',
-    message: 'Contacta con soporte o con un administrador para generar una contrasena temporal.',
+    message: 'Contacta con soporte o con un administrador para generar una contraseña temporal.',
     buttons: ['Entendido']
   })
 
@@ -50,14 +53,6 @@ const onIniciarSesion = async () => {
 
     guardarSesion(respuesta)
 
-    const toast = await toastController.create({
-      message: `Bienvenida, ${respuesta.nombre}.`,
-      duration: 1800,
-      position: 'bottom'
-    })
-
-    await toast.present()
-
     if (respuesta.debeCambiarPassword) {
       await router.replace('/cambiar-password-obligatorio')
       return
@@ -66,7 +61,7 @@ const onIniciarSesion = async () => {
     await router.replace((respuesta.rol ?? '').toLowerCase() === 'admin' ? '/admin' : '/inicio')
   } catch (error: any) {
     const toast = await toastController.create({
-      message: error?.message || 'No se pudo iniciar sesion.',
+      message: error?.message || 'No se pudo iniciar sesión.',
       duration: 2500,
       position: 'bottom',
       color: 'danger'
@@ -97,18 +92,28 @@ const onIniciarSesion = async () => {
               type="email"
               fill="outline"
               label-placement="stacked"
-              placeholder="Correo electronico"
+              placeholder="Correo electrónico"
               class="campo"
             />
 
-            <ion-input
-              v-model="password"
-              type="password"
-              fill="outline"
-              label-placement="stacked"
-              placeholder="Contrasena"
-              class="campo"
-            />
+            <div class="campo-password">
+              <ion-input
+                v-model="password"
+                :type="mostrarPassword ? 'text' : 'password'"
+                fill="outline"
+                label-placement="stacked"
+                placeholder="Contraseña"
+                class="campo"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                @click.stop="mostrarPassword = !mostrarPassword"
+              >
+                <ion-icon :icon="mostrarPassword ? eyeOffOutline : eyeOutline" />
+              </button>
+            </div>
 
             <ion-button
               expand="block"
@@ -116,16 +121,16 @@ const onIniciarSesion = async () => {
               :disabled="!formularioValido || cargando"
               @click="onIniciarSesion"
             >
-              <template v-if="!cargando">Iniciar sesion</template>
+              <template v-if="!cargando">Iniciar sesión</template>
               <template v-else><ion-spinner name="crescent" /></template>
             </ion-button>
 
             <button type="button" class="enlace-texto enlace-password" @click="onOlvidePassword">
-              He olvidado mi contrasena
+              He olvidado mi contraseña
             </button>
 
             <div class="pie-formulario">
-              <ion-text color="medium">No tienes una cuenta?</ion-text>
+              <ion-text color="medium">¿No tienes una cuenta?</ion-text>
               <button type="button" class="enlace-texto" @click="irARegistro">
                 Crear una cuenta
               </button>
@@ -174,5 +179,34 @@ const onIniciarSesion = async () => {
   margin: 10px auto 0;
   text-align: center;
   font-size: 0.9rem;
+}
+
+.campo-password {
+  position: relative;
+}
+
+.campo-password .campo {
+  --padding-end: 44px;
+  margin-bottom: 14px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #46658f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 </style>

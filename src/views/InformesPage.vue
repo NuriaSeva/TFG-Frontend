@@ -94,7 +94,7 @@ onIonViewWillEnter(async () => {
         <div class="topbar">
           <div>
             <h1 class="topbar-title">Informes</h1>
-            <p class="topbar-subtitle">Predicciones y patrones del mes actual</p>
+            <p class="topbar-subtitle">Cómo parece avanzar tu mes actual</p>
           </div>
         </div>
       </ion-toolbar>

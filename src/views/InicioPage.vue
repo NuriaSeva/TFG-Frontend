@@ -4,7 +4,7 @@
       <ion-toolbar class="custom-toolbar">
         <div class="topbar">
           <div>
-            <h1 class="topbar-title">Hola, {{ nombreUsuarioCabecera }}</h1>
+            <h1 class="topbar-title">Inicio</h1>
             <p class="topbar-date">{{ fechaCabeceraFormateada }}</p>
           </div>
 
@@ -199,7 +199,6 @@
             <div class="alerts-modal-header">
               <div class="alerts-modal-title-block">
                 <h2>Histórico de avisos</h2>
-                <p>Últimos avisos detectados en tu cuenta</p>
               </div>
               <div class="alerts-modal-actions">
                 <button
@@ -286,18 +285,13 @@ import {
 } from '@/services/tinkService'
 import { sincronizarMovimientosBancarios } from '@/services/transaccionService'
 import { getCuentaPrincipalPorUsuario } from '@/services/cuentaBancariaService'
-import {
-  getResumenMesActual,
-  getVisualizaciones,
-  type DashboardAlertaProactivaResponse
-} from '@/services/dashboardService'
+import { getResumenMesActual } from '@/services/dashboardService'
 import {
   getAlertas,
   marcarTodasAlertasLeidas,
   type AlertaResponse
 } from '@/services/alertaService'
 import { getConfiguracionUsuario } from '@/services/configuracionUsuarioService'
-import { obtenerUsuarioSesion } from '@/services/autenticacionService'
 
 interface CuentaGuardada {
   id: string
@@ -318,6 +312,13 @@ interface ResumenMes {
   numeroIngresosMes: number
 }
 
+interface AlertaInicio {
+  tipo: string
+  severidad: 'baja' | 'media' | 'alta'
+  titulo: string
+  mensaje: string
+}
+
 const loading = ref(false)
 const sincronizando = ref(false)
 const desvinculando = ref(false)
@@ -331,7 +332,7 @@ const resumenMes = ref<ResumenMes>({
   numeroGastosMes: 0,
   numeroIngresosMes: 0
 })
-const alertasProactivas = ref<DashboardAlertaProactivaResponse[]>([])
+const alertasProactivas = ref<AlertaInicio[]>([])
 const historialAlertas = ref<AlertaResponse[]>([])
 const mostrandoCentroAlertas = ref(false)
 const cargandoCentroAlertas = ref(false)
@@ -342,13 +343,6 @@ const primeraCargaInicioCompletada = ref(false)
 
 const route = useRoute()
 const router = useRouter()
-
-const nombreUsuarioCabecera = computed(() => {
-  const nombreCompleto = obtenerUsuarioSesion()?.nombre?.trim()
-  if (!nombreCompleto) return 'Nuria'
-
-  return nombreCompleto.split(' ')[0]
-})
 
 const fechaCabeceraFormateada = computed(() => {
   return new Date()
@@ -497,9 +491,10 @@ const cargarAlertasProactivas = async () => {
   }
 
   try {
-    await getVisualizaciones()
-    const response = await getAlertas(1, 12)
-    const alertasInicio = (response.items ?? []).filter(esAlertaParaInicio)
+    const response = await getAlertas(1, 50)
+    const alertasInicio = (response.items ?? [])
+      .filter(esAlertaParaInicio)
+      .filter(esAlertaDelMesActual)
     alertasProactivas.value = alertasInicio.map(a => ({
       tipo: String(a.tipo),
       severidad: a.tipo === 3 ? 'alta' : a.tipo === 1 ? 'media' : 'baja',
@@ -595,8 +590,19 @@ const esInsightIA = (alerta: AlertaResponse) => {
 
 const esAlertaParaInicio = (alerta: AlertaResponse) => {
   // Mantenemos avisos no IA y cualquier aviso crítico (predicción tipo 3).
-  if (alerta.tipo === 3) return true
+  if (alerta.tipo === 3) return false
   return !esInsightIA(alerta)
+}
+
+const esAlertaDelMesActual = (alerta: AlertaResponse) => {
+  const fecha = new Date(alerta.fechaCreacion)
+  if (Number.isNaN(fecha.getTime())) return false
+
+  const ahora = new Date()
+  return (
+    fecha.getFullYear() === ahora.getFullYear() &&
+    fecha.getMonth() === ahora.getMonth()
+  )
 }
 
 const etiquetaTipoAlerta = (alerta: AlertaResponse) => {
@@ -1499,4 +1505,3 @@ ion-spinner {
   }
 }
 </style>
-
